@@ -1,0 +1,17 @@
+{
+  "name": "our-sea-shared-tank",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared fish tank for Our Sea",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build:netlify": "node scripts/build-netlify.js"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

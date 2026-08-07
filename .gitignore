@@ -1,0 +1,4 @@
+data/fish.json
+data/fish.json.tmp
+_*.png
+cloudflared.exe

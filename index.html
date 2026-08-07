@@ -1,0 +1,3120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>我们的海</title>
+  <style>
+    @font-face {
+      font-family: "Ma Shan Zheng";
+      src: url("assets/fonts/MaShanZheng-Regular.ttf") format("truetype");
+      font-display: swap;
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    :root {
+      --bg: #f4f7f2;
+      --surface: #ffffff;
+      --surface-soft: #edf6f1;
+      --ink: #17201d;
+      --muted: #65716d;
+      --line: #cfdad5;
+      --line-strong: #aabbb3;
+      --water-top: #d8f3f0;
+      --water-mid: #8fd3da;
+      --water-deep: #287fa1;
+      --kelp: #25735b;
+      --coral: #d45c4d;
+      --sand: #d9bf78;
+      --amber: #9d6b1e;
+      --heart: #d63f61;
+      --shadow: 0 18px 46px rgba(20, 33, 34, 0.14);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(170, 187, 179, 0.12) 1px, transparent 1px) 0 0 / 48px 48px,
+        linear-gradient(rgba(170, 187, 179, 0.1) 1px, transparent 1px) 0 0 / 48px 48px,
+        #eef5f1;
+      color: var(--ink);
+      font: 400 16px/1.45 "Ma Shan Zheng", "STXingkai", "华文行楷", "KaiTi", "楷体", cursive;
+      letter-spacing: 0;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: #6e958a;
+      background: #f5fbf8;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      color: #909c98;
+      background: #edf1ee;
+    }
+
+    .app {
+      width: min(1540px, 100%);
+      height: 100vh;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      height: 60px;
+      padding: 6px 18px;
+      border-bottom: 1px solid #9ebeb5;
+      background:
+        linear-gradient(90deg, rgba(37, 115, 91, 0.08), transparent 34%),
+        rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      box-shadow: inset 0 -3px 0 rgba(212, 92, 77, 0.08);
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      position: relative;
+      font-size: 32px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #205b57;
+      font-family: "Ma Shan Zheng", "STXingkai", "华文行楷", "KaiTi", "楷体", cursive;
+      text-shadow: 0 2px 0 rgba(255, 255, 255, 0.9), 2px 3px 0 rgba(32, 91, 87, 0.1);
+    }
+
+    h1::after {
+      position: absolute;
+      right: 0;
+      bottom: -5px;
+      left: 2px;
+      height: 4px;
+      border-radius: 50%;
+      background: linear-gradient(90deg, #205b57, rgba(32, 91, 87, 0.08));
+      content: "";
+      transform: rotate(-1deg);
+    }
+
+    .title-lockup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .title-seal {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      place-items: center;
+      border: 2px solid #bd5148;
+      color: #bd5148;
+      font-size: 15px;
+      line-height: 1;
+      transform: rotate(-4deg);
+    }
+
+    .title-stack {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .title-note {
+      color: #7b8b85;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    h2 {
+      font-size: 16px;
+      line-height: 1.2;
+      font-family: "Ma Shan Zheng", "STXingkai", "华文行楷", "KaiTi", "楷体", cursive;
+      font-weight: 800;
+    }
+
+    .status-strip {
+      display: flex;
+      justify-content: flex-end;
+      align-items: stretch;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .status-item {
+      min-width: 88px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 4px 10px;
+      background: #fff;
+      box-shadow: inset 0 3px 0 rgba(37, 115, 91, 0.08);
+    }
+
+    .status-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .status-item strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 16px;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 0;
+      height: calc(100vh - 60px);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .main-area {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr);
+      height: 100%;
+      min-width: 0;
+      border-right: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .primary-action {
+      min-height: 36px;
+      border-color: #276f62;
+      background: #1f6a5c;
+      color: #fff;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .primary-action:hover:not(:disabled) {
+      border-color: #245f54;
+      background: #245f54;
+      color: #fff;
+    }
+
+    .my-fish-action {
+      min-height: 36px;
+      padding: 6px 10px;
+      border-color: #79a89c;
+      background: #f7fbf9;
+      color: #245f54;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .tank-section {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      background: #f4faf7;
+    }
+
+    .tank-section::after {
+      position: absolute;
+      inset: 0;
+      border: 7px solid rgba(255, 255, 255, 0.25);
+      box-shadow: inset 0 0 38px rgba(255, 255, 255, 0.2), inset 0 -20px 45px rgba(21, 85, 106, 0.12);
+      content: "";
+      pointer-events: none;
+    }
+
+    .tank-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .cat-layer {
+      display: none;
+    }
+
+    .empty-tank {
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      width: min(360px, calc(100% - 32px));
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: var(--radius);
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #245568;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .draw-panel,
+    .side-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .draw-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .draw-canvas-wrap {
+      display: grid;
+      min-height: 0;
+      overflow: auto;
+      padding: 0;
+      background: #fff;
+      scrollbar-color: #9ebeb5 #f4f8f6;
+    }
+
+    .draw-stage {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 100%;
+      place-self: center;
+      background: #fff;
+    }
+
+    .draw-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+      background: #fff;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .draft-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .zoom-control {
+      display: grid;
+      grid-template-columns: 30px 48px 30px;
+      align-items: center;
+      overflow: hidden;
+      border: 1px solid #9ebeb5;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .zoom-control button {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .zoom-value {
+      color: #50645e;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .draft-btn {
+      min-height: 32px;
+      padding: 4px 10px;
+      border-color: #9ebeb5;
+      background: #f7fbf9;
+      color: #245f54;
+      white-space: nowrap;
+    }
+
+    .tool-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 110px 8px 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .submit-btn.toolbar-submit {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      width: auto;
+      min-width: 84px;
+      min-height: 30px;
+      margin: 0;
+      padding: 3px 8px;
+      font-size: 13px;
+      transform: translateY(-50%);
+    }
+
+    .icon-btn {
+      display: grid;
+      width: 34px;
+      height: 32px;
+      place-items: center;
+      padding: 0;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .tool-btn.active {
+      border-color: #2d7a69;
+      background: var(--surface-soft);
+      color: #145544;
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--line-strong);
+    }
+
+    .swatch.active {
+      box-shadow: 0 0 0 2px #1d6d61;
+    }
+
+    .size-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 150px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input[type="range"] {
+      width: 92px;
+      accent-color: #2d7a69;
+    }
+
+    .form-stack {
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: #32413c;
+      font-weight: 600;
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      padding: 7px 10px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .field input[aria-invalid="true"] {
+      border-color: #cf4d4d;
+      box-shadow: 0 0 0 2px rgba(207, 77, 77, 0.1);
+    }
+
+    .name-error {
+      min-height: 18px;
+      color: #b83b3b;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .name-error:empty {
+      display: none;
+    }
+
+    .score-box {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px;
+      background: #fbfcf9;
+    }
+
+    .score-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .score-line strong {
+      font-size: 22px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .meter {
+      height: 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      overflow: hidden;
+      background: #edf1ee;
+    }
+
+    .meter > span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: var(--coral);
+      transition: width 160ms ease, background 160ms ease;
+    }
+
+    .meter > span.pass {
+      background: #2d7a69;
+    }
+
+    .score-note {
+      min-height: 40px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .modal-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      place-items: center;
+      padding: 12px;
+      background: rgba(14, 28, 29, 0.38);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal-layer.open {
+      display: grid;
+    }
+
+    .fry-modal {
+      position: relative;
+      width: min(1080px, calc(100vw - 40px));
+      height: min(700px, calc(100vh - 32px));
+      max-height: none;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      border-radius: var(--radius);
+      background: #f8faf6;
+      box-shadow: 0 24px 80px rgba(11, 28, 31, 0.28);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 46px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .modal-body {
+      display: block;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      padding: 10px;
+    }
+
+    .result-layer {
+      position: absolute;
+      inset: 46px 0 0;
+      z-index: 4;
+      display: none;
+      place-items: center;
+      padding: 16px;
+      background: rgba(21, 40, 39, 0.34);
+      backdrop-filter: blur(4px);
+    }
+
+    .result-layer.open {
+      display: grid;
+    }
+
+    .submit-panel {
+      width: min(390px, calc(100vw - 48px));
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 18px 48px rgba(20, 38, 37, 0.24);
+    }
+
+    .submit-panel .panel-head {
+      display: flex;
+    }
+
+    .intro-layer {
+      z-index: 30;
+    }
+
+    .exit-layer {
+      z-index: 40;
+    }
+
+    .exit-dialog {
+      width: min(420px, calc(100vw - 32px));
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(11, 28, 31, 0.3);
+    }
+
+    .exit-copy {
+      padding: 18px;
+      color: #334943;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .exit-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 18px 18px;
+    }
+
+    .exit-actions .submit-btn {
+      min-height: 38px;
+    }
+
+    .exit-cancel {
+      grid-column: 1 / -1;
+      min-height: 34px;
+      background: #fff;
+      color: #435c55;
+    }
+
+    .exit-discard {
+      min-height: 38px;
+      border-color: rgba(205, 67, 67, 0.44);
+      background: #fff7f5;
+      color: #b83b3b;
+    }
+
+    .intro-dialog {
+      width: min(470px, calc(100vw - 32px));
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(11, 28, 31, 0.3);
+    }
+
+    .my-fish-dialog {
+      width: min(520px, calc(100vw - 32px));
+      max-height: min(620px, calc(100vh - 32px));
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(11, 28, 31, 0.3);
+    }
+
+    .my-fish-summary {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f7fbf9;
+      color: #60716b;
+      font-size: 13px;
+    }
+
+    .my-fish-list {
+      display: grid;
+      align-content: start;
+      gap: 6px;
+      min-height: 150px;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .my-fish-list .empty-list {
+      min-height: 150px;
+      display: grid;
+      place-items: center;
+    }
+
+    .my-fish-row {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 62px;
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .my-fish-row:last-child {
+      border-bottom: 0;
+    }
+
+    .my-fish-thumb {
+      width: 64px;
+      height: 48px;
+      object-fit: contain;
+    }
+
+    .my-fish-info {
+      min-width: 0;
+    }
+
+    .my-fish-name {
+      overflow: hidden;
+      color: #1d3a40;
+      font-size: 17px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .my-fish-meta {
+      margin-top: 2px;
+      color: #71817b;
+      font-size: 12px;
+    }
+
+    .my-fish-delete {
+      min-width: 58px;
+      min-height: 30px;
+      padding: 4px 9px;
+      border-color: rgba(205, 67, 67, 0.44);
+      background: #fff7f5;
+      color: #b83b3b;
+      font-size: 13px;
+    }
+
+    .intro-copy {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      color: #334943;
+      font-size: 17px;
+    }
+
+    .intro-reminder {
+      border-left: 4px solid var(--coral);
+      padding: 8px 10px;
+      background: #fff7f4;
+      color: #8b3f3b;
+      font-size: 18px;
+    }
+
+    .intro-action {
+      width: calc(100% - 36px);
+      margin: 0 18px 18px;
+    }
+
+    .result-box {
+      display: none;
+      gap: 10px;
+    }
+
+    .result-box.show {
+      display: grid;
+    }
+
+    .name-step {
+      display: none;
+      gap: 12px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .name-step.show {
+      display: grid;
+    }
+
+    .submit-btn {
+      width: 100%;
+      min-height: 42px;
+      border-color: #276f62;
+      background: #1f6a5c;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      background: #245f54;
+      color: #fff;
+    }
+
+    .side {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      align-content: start;
+      min-width: 0;
+      height: 100%;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(37, 115, 91, 0.06), transparent 28%),
+        #f8faf6;
+    }
+
+    .side-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-height: 0;
+      margin: 12px 12px 8px;
+      overflow: hidden;
+      border-color: #b6ccc4;
+      box-shadow: 0 8px 24px rgba(31, 74, 67, 0.08);
+    }
+
+    .side-panel > .panel-head {
+      border-bottom: 2px solid rgba(212, 92, 77, 0.28);
+      background: linear-gradient(90deg, #edf6f1, #fff);
+    }
+
+    .rank-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .rank-tagline {
+      position: relative;
+      color: #205b57;
+      font-family: "Ma Shan Zheng", "STXingkai", "华文行楷", "KaiTi", "楷体", cursive;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.1;
+      text-shadow: 0 2px 0 rgba(255, 255, 255, 0.9), 2px 3px 0 rgba(32, 91, 87, 0.1);
+      white-space: nowrap;
+    }
+
+    .rank-tagline::after {
+      position: absolute;
+      right: 0;
+      bottom: -4px;
+      left: 1px;
+      height: 3px;
+      border-radius: 50%;
+      background: linear-gradient(90deg, #205b57, rgba(32, 91, 87, 0.08));
+      content: "";
+      transform: rotate(-1deg);
+    }
+
+    .leaderboard {
+      display: grid;
+      grid-template-rows: repeat(15, minmax(0, 1fr));
+      gap: 2px;
+      min-height: 0;
+      max-height: none;
+      overflow: hidden;
+      padding: 4px;
+    }
+
+    .rank-row {
+      display: grid;
+      grid-template-columns: 24px 36px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 4px;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 2px 3px;
+      background: #fff;
+    }
+
+    .rank-no {
+      color: var(--muted);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rank-thumb {
+      width: 36px;
+      height: 24px;
+      object-fit: contain;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #f8fbfa;
+    }
+
+    .rank-info {
+      min-width: 0;
+    }
+
+    .rank-name {
+      overflow: hidden;
+      color: #263530;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      line-height: 1.1;
+    }
+
+    .heart-btn {
+      min-width: 42px;
+      min-height: 24px;
+      padding: 1px 4px;
+      font-size: 11px;
+      border-color: rgba(214, 63, 97, 0.42);
+      color: var(--heart);
+      font-weight: 700;
+    }
+
+    .rank-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .delete-btn {
+      width: 24px;
+      min-width: 24px;
+      height: 24px;
+      padding: 0;
+      border-color: rgba(205, 67, 67, 0.44);
+      background: #fff7f5;
+      color: #c63d3d;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .maintenance {
+      display: grid;
+      gap: 4px;
+      margin: 0 12px 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 8px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+      box-shadow: inset 4px 0 0 rgba(217, 191, 120, 0.85);
+    }
+
+    .maintenance strong {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    #lastCleanupText {
+      display: none;
+    }
+
+    .empty-list {
+      grid-row: 1 / -1;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      padding: 16px;
+      color: var(--muted);
+      text-align: center;
+      background: #fff;
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 10;
+      max-width: min(380px, calc(100vw - 32px));
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: #fff;
+      box-shadow: 0 12px 32px rgba(20, 33, 34, 0.16);
+      color: #263530;
+      transform: translateY(22px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 160ms ease, opacity 160ms ease;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 1100px) {
+      .title-note {
+        display: none;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 60px);
+      }
+
+      .main-area {
+        border-right: 0;
+      }
+
+      .side {
+        grid-template-rows: auto auto;
+        border-top: 1px solid var(--line);
+      }
+
+      .leaderboard {
+        max-height: 280px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .topbar {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .title-seal {
+        display: none;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      .status-strip {
+        justify-content: stretch;
+      }
+
+      .status-item {
+        flex: 1 1 120px;
+      }
+
+      .modal-body {
+        grid-template-columns: 1fr;
+      }
+
+    }
+
+    @media (max-width: 540px) {
+      .topbar {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+
+      .rank-row {
+        grid-template-columns: 28px 42px minmax(0, 1fr);
+      }
+
+      .rank-row .heart-btn {
+        grid-column: 2 / 4;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="title-lockup">
+        <span class="title-seal" aria-hidden="true">同游</span>
+        <div class="title-stack">
+          <h1>我们的海</h1>
+          <span class="title-note">每一笔，都入海</span>
+        </div>
+      </div>
+      <div class="status-strip" aria-label="鱼缸统计">
+        <button class="primary-action" id="newFishBtn" type="button">添加鱼苗</button>
+        <button class="my-fish-action" id="myFishBtn" type="button">我的鱼苗</button>
+        <div class="status-item">
+          <span>鱼</span>
+          <strong id="fishCount">0</strong>
+        </div>
+        <div class="status-item">
+          <span>爱心</span>
+          <strong id="heartCount">0</strong>
+        </div>
+        <div class="status-item">
+          <span>质检门槛</span>
+          <strong id="passScoreText">75%</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="shell">
+      <div class="main-area">
+        <section class="tank-section" aria-label="大鱼缸">
+          <canvas class="cat-layer" id="catCanvas" aria-hidden="true"></canvas>
+          <canvas class="tank-canvas" id="tankCanvas"></canvas>
+          <div class="empty-tank" id="emptyTank">鱼缸里还没有鱼</div>
+        </section>
+
+      </div>
+
+      <aside class="side" aria-label="侧边栏">
+        <section class="side-panel">
+          <div class="panel-head">
+            <div class="rank-heading">
+              <h2>排行榜</h2>
+              <span class="rank-tagline">我是画鱼糕手！</span>
+            </div>
+            <button class="icon-btn" id="sortBtn" type="button" title="按爱心排序">♥</button>
+          </div>
+          <div class="leaderboard" id="leaderboard"></div>
+        </section>
+
+        <section class="maintenance" aria-label="鱼缸维护">
+          <strong>自动清理</strong>
+          <span id="cleanupText">超过 8 个月的鱼会被移出鱼缸</span>
+          <span id="lastCleanupText">本次打开已检查</span>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <section class="modal-layer intro-layer open" id="introModal" aria-label="使用说明" aria-modal="true" role="dialog">
+    <div class="intro-dialog">
+      <div class="modal-head">
+        <h2>欢迎来到我们的海</h2>
+      </div>
+      <div class="intro-copy">
+        <p>画出你想要的小鱼，提交质检达到 75% 后，就可以为它取名并放入鱼缸。</p>
+        <p>你可以通过点击鱼缸里的小鱼给别人的小鱼送上爱心❤</p>
+        <p>八个月前加入的小鱼会被自动清理哦~</p>
+        <p class="intro-reminder">您加入的鱼苗可以在三分钟内进行删除。</p>
+      </div>
+      <button class="submit-btn intro-action" id="closeIntroBtn" type="button">我知道了</button>
+    </div>
+  </section>
+
+  <section class="modal-layer" id="myFishModal" aria-label="我的鱼苗" aria-modal="true" role="dialog">
+    <div class="my-fish-dialog">
+      <div class="modal-head">
+        <h2>我的鱼苗</h2>
+        <button class="icon-btn" id="closeMyFishBtn" type="button" title="关闭">×</button>
+      </div>
+      <p class="my-fish-summary" id="myFishSummary">三分钟内添加的鱼苗可以删除</p>
+      <div class="my-fish-list" id="myFishList"></div>
+    </div>
+  </section>
+
+  <section class="modal-layer exit-layer" id="exitPrompt" aria-label="保存草稿后退出" aria-modal="true" role="dialog">
+    <div class="exit-dialog">
+      <div class="modal-head">
+        <h2>要保存这条鱼苗吗？</h2>
+      </div>
+      <p class="exit-copy">这条鱼苗还没有成功放入鱼缸，可以先保存为草稿。</p>
+      <div class="exit-actions">
+        <button class="submit-btn" id="saveAndExitBtn" type="button">保存并退出</button>
+        <button class="exit-discard" id="discardAndExitBtn" type="button">不保存退出</button>
+        <button class="exit-cancel" id="continueDrawingBtn" type="button">继续画</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="modal-layer" id="fishModal" aria-label="添加鱼苗" aria-modal="true" role="dialog">
+    <div class="fry-modal">
+      <div class="modal-head">
+        <h2>添加鱼苗</h2>
+        <button class="icon-btn" id="closeModalBtn" type="button" title="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="draw-panel">
+          <div class="panel-head">
+            <h2>画一条鱼</h2>
+            <div class="draft-actions">
+              <div class="zoom-control" aria-label="画布缩放">
+                <button id="zoomOutBtn" type="button" title="缩小画布">−</button>
+                <span class="zoom-value" id="zoomValue">100%</span>
+                <button id="zoomInBtn" type="button" title="放大画布">+</button>
+              </div>
+              <button class="draft-btn" id="saveDraftBtn" type="button">保存草稿</button>
+              <button class="draft-btn" id="restoreDraftBtn" type="button">恢复草稿</button>
+            </div>
+          </div>
+          <div class="draw-canvas-wrap" id="drawCanvasWrap">
+            <div class="draw-stage" id="drawStage">
+              <canvas class="draw-canvas" id="drawCanvas" width="1000" height="450"></canvas>
+            </div>
+          </div>
+          <div class="tool-row" aria-label="绘画工具">
+            <button class="tool-btn active" id="penBtn" type="button">画笔</button>
+            <button class="tool-btn" id="eraserBtn" type="button">橡皮</button>
+            <button class="tool-btn line-btn active" type="button" data-line="smooth">圆线</button>
+            <button class="tool-btn line-btn" type="button" data-line="pencil">铅笔</button>
+            <button class="tool-btn line-btn" type="button" data-line="marker">马克</button>
+            <button class="tool-btn line-btn" type="button" data-line="dashed">虚线</button>
+            <button class="tool-btn line-btn" type="button" data-line="dots">点线</button>
+            <button class="swatch active" type="button" data-color="#17201d" style="background:#17201d" title="墨色"></button>
+            <button class="swatch" type="button" data-color="#d45c4d" style="background:#d45c4d" title="珊瑚红"></button>
+            <button class="swatch" type="button" data-color="#247f9f" style="background:#247f9f" title="水蓝"></button>
+            <button class="swatch" type="button" data-color="#25735b" style="background:#25735b" title="海草绿"></button>
+            <button class="swatch" type="button" data-color="#e49a34" style="background:#e49a34" title="金橙"></button>
+            <button class="swatch" type="button" data-color="#8a62d2" style="background:#8a62d2" title="紫色"></button>
+            <button class="swatch" type="button" data-color="#f4d45d" style="background:#f4d45d" title="黄色"></button>
+            <button class="swatch" type="button" data-color="#ef7aa7" style="background:#ef7aa7" title="粉色"></button>
+            <button class="swatch" type="button" data-color="#ef4444" style="background:#ef4444" title="红色"></button>
+            <button class="swatch" type="button" data-color="#14b8a6" style="background:#14b8a6" title="青绿"></button>
+            <button class="swatch" type="button" data-color="#38bdf8" style="background:#38bdf8" title="天蓝"></button>
+            <button class="swatch" type="button" data-color="#a3e635" style="background:#a3e635" title="青柠"></button>
+            <button class="swatch" type="button" data-color="#7c3aed" style="background:#7c3aed" title="深紫"></button>
+            <button class="swatch" type="button" data-color="#b45309" style="background:#b45309" title="棕色"></button>
+            <button class="swatch" type="button" data-color="#94a3b8" style="background:#94a3b8" title="银灰"></button>
+            <button class="swatch" type="button" data-color="#020617" style="background:#020617" title="黑色"></button>
+            <button class="swatch" type="button" data-color="#ffffff" style="background:#ffffff" title="白色"></button>
+            <label class="size-control">
+              粗细
+              <input id="brushSize" type="range" min="2" max="26" value="8">
+            </label>
+            <button class="icon-btn" id="undoBtn" type="button" title="撤销">↶</button>
+            <button class="icon-btn" id="clearBtn" type="button" title="清空画布">×</button>
+            <button class="submit-btn toolbar-submit" id="submitBtn" type="button">提交检测</button>
+          </div>
+        </div>
+      </div>
+      <div class="result-layer" id="resultLayer">
+        <div class="submit-panel">
+          <div class="panel-head">
+            <h2>质检结果</h2>
+            <button class="icon-btn" id="closeResultBtn" type="button" title="关闭">×</button>
+          </div>
+          <div class="form-stack">
+            <div class="score-box result-box" id="resultBox">
+              <div class="score-line">
+                <span>像鱼相似度</span>
+                <strong id="scoreText">0%</strong>
+              </div>
+              <div class="meter" aria-label="像鱼相似度">
+                <span id="scoreFill"></span>
+              </div>
+              <p class="score-note" id="scoreNote">提交后检测</p>
+            </div>
+            <div class="name-step" id="nameStep">
+              <div class="field">
+                <label for="fishName">为你的小鱼取个名字吧</label>
+                <input id="fishName" maxlength="18" autocomplete="off" placeholder="不能和已有小鱼重名">
+                <p class="name-error" id="nameError" role="alert"></p>
+              </div>
+              <button class="submit-btn" id="saveFishBtn" type="button">放入鱼缸</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = "shared-fish-tank-v1";
+    const CLIENT_ID_KEY = "shared-fish-tank-client-id";
+    const DRAFT_KEY = "shared-fish-tank-draft-v1";
+    const DELETE_WINDOW_MS = 3 * 60 * 1000;
+    const DRAW_WIDTH = 1000;
+    const DRAW_HEIGHT = 450;
+    const PASS_SCORE = 75;
+    const SHARED_MODE = location.protocol === "http:" || location.protocol === "https:";
+    const defaultState = {
+      fish: [],
+      lastCleanupAt: 0,
+      lastRemovedCount: 0
+    };
+    const clientId = getClientId();
+
+    const els = {
+      tankCanvas: document.getElementById("tankCanvas"),
+      catCanvas: document.getElementById("catCanvas"),
+      drawCanvas: document.getElementById("drawCanvas"),
+      drawCanvasWrap: document.getElementById("drawCanvasWrap"),
+      drawStage: document.getElementById("drawStage"),
+      zoomOutBtn: document.getElementById("zoomOutBtn"),
+      zoomInBtn: document.getElementById("zoomInBtn"),
+      zoomValue: document.getElementById("zoomValue"),
+      fishModal: document.getElementById("fishModal"),
+      introModal: document.getElementById("introModal"),
+      closeIntroBtn: document.getElementById("closeIntroBtn"),
+      resultLayer: document.getElementById("resultLayer"),
+      closeResultBtn: document.getElementById("closeResultBtn"),
+      newFishBtn: document.getElementById("newFishBtn"),
+      myFishBtn: document.getElementById("myFishBtn"),
+      myFishModal: document.getElementById("myFishModal"),
+      closeMyFishBtn: document.getElementById("closeMyFishBtn"),
+      myFishSummary: document.getElementById("myFishSummary"),
+      myFishList: document.getElementById("myFishList"),
+      exitPrompt: document.getElementById("exitPrompt"),
+      saveAndExitBtn: document.getElementById("saveAndExitBtn"),
+      discardAndExitBtn: document.getElementById("discardAndExitBtn"),
+      continueDrawingBtn: document.getElementById("continueDrawingBtn"),
+      closeModalBtn: document.getElementById("closeModalBtn"),
+      emptyTank: document.getElementById("emptyTank"),
+      fishCount: document.getElementById("fishCount"),
+      heartCount: document.getElementById("heartCount"),
+      passScoreText: document.getElementById("passScoreText"),
+      leaderboard: document.getElementById("leaderboard"),
+      fishName: document.getElementById("fishName"),
+      nameError: document.getElementById("nameError"),
+      scoreText: document.getElementById("scoreText"),
+      scoreFill: document.getElementById("scoreFill"),
+      scoreNote: document.getElementById("scoreNote"),
+      resultBox: document.getElementById("resultBox"),
+      nameStep: document.getElementById("nameStep"),
+      submitBtn: document.getElementById("submitBtn"),
+      saveFishBtn: document.getElementById("saveFishBtn"),
+      penBtn: document.getElementById("penBtn"),
+      eraserBtn: document.getElementById("eraserBtn"),
+      brushSize: document.getElementById("brushSize"),
+      saveDraftBtn: document.getElementById("saveDraftBtn"),
+      restoreDraftBtn: document.getElementById("restoreDraftBtn"),
+      undoBtn: document.getElementById("undoBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      sortBtn: document.getElementById("sortBtn"),
+      cleanupText: document.getElementById("cleanupText"),
+      lastCleanupText: document.getElementById("lastCleanupText"),
+      toast: document.getElementById("toast")
+    };
+
+    const tankCtx = els.tankCanvas.getContext("2d");
+    const catCtx = els.catCanvas.getContext("2d");
+    const drawCtx = els.drawCanvas.getContext("2d", { willReadFrequently: true });
+    const imageCache = new Map();
+    const imageFacingCache = new WeakMap();
+
+    let state = SHARED_MODE ? structuredClone(defaultState) : loadState();
+    let syncInFlight = false;
+    let tool = "pen";
+    let lineStyle = "smooth";
+    let activeColor = "#17201d";
+    let canvasZoom = 1;
+    let isDrawing = false;
+    let lastPoint = null;
+    let undoStack = [];
+    let currentScore = 0;
+    let currentBreakdown = [];
+    let pendingFishImage = null;
+    let pendingFacing = 1;
+    let hitboxes = [];
+    let leaderFishId = null;
+    let likeBurst = null;
+    const dropAnimations = new Map();
+    const MIN_CANVAS_ZOOM = 1;
+    const MAX_CANVAS_ZOOM = 3;
+    const CANVAS_ZOOM_STEP = 0.25;
+
+    init();
+
+    async function init() {
+      if (!SHARED_MODE) cleanupOldFish();
+      bindEvents();
+      updateDraftAvailability();
+      resetSubmission();
+      els.passScoreText.textContent = `${PASS_SCORE}%`;
+      renderAll();
+      if (location.hash === "#new") {
+        els.introModal.classList.remove("open");
+        openFishModal();
+      }
+      requestAnimationFrame(drawTank);
+      if (SHARED_MODE) {
+        await syncSharedState(true);
+        window.setInterval(syncSharedState, 4000);
+      } else {
+        window.setInterval(() => {
+          cleanupOldFish();
+          saveState();
+        }, 60 * 60 * 1000);
+      }
+      window.setInterval(renderLeaderboard, 15000);
+      window.setInterval(() => {
+        if (els.myFishModal.classList.contains("open")) renderMyFish();
+      }, 1000);
+    }
+
+    function bindEvents() {
+      els.drawCanvas.addEventListener("pointerdown", startDrawing);
+      els.drawCanvas.addEventListener("pointermove", drawMove);
+      window.addEventListener("pointerup", stopDrawing);
+      window.addEventListener("pointercancel", stopDrawing);
+      els.newFishBtn.addEventListener("click", openFishModal);
+      els.myFishBtn.addEventListener("click", openMyFishModal);
+      els.closeMyFishBtn.addEventListener("click", closeMyFishModal);
+      els.myFishModal.addEventListener("click", (event) => {
+        if (event.target === els.myFishModal) closeMyFishModal();
+      });
+      els.closeIntroBtn.addEventListener("click", () => els.introModal.classList.remove("open"));
+      els.closeModalBtn.addEventListener("click", requestCloseFishModal);
+      els.saveAndExitBtn.addEventListener("click", saveAndExit);
+      els.discardAndExitBtn.addEventListener("click", discardAndExit);
+      els.continueDrawingBtn.addEventListener("click", closeExitPrompt);
+      els.exitPrompt.addEventListener("click", (event) => {
+        if (event.target === els.exitPrompt) closeExitPrompt();
+      });
+      els.closeResultBtn.addEventListener("click", closeResult);
+      els.resultLayer.addEventListener("click", (event) => {
+        if (event.target === els.resultLayer) closeResult();
+      });
+      els.fishModal.addEventListener("click", (event) => {
+        if (event.target === els.fishModal) requestCloseFishModal();
+      });
+      els.penBtn.addEventListener("click", () => setTool("pen"));
+      els.eraserBtn.addEventListener("click", () => setTool("eraser"));
+      els.clearBtn.addEventListener("click", clearDrawing);
+      els.undoBtn.addEventListener("click", undoDrawing);
+      els.saveDraftBtn.addEventListener("click", saveDraft);
+      els.restoreDraftBtn.addEventListener("click", restoreDraft);
+      els.zoomOutBtn.addEventListener("click", () => setCanvasZoom(canvasZoom - CANVAS_ZOOM_STEP));
+      els.zoomInBtn.addEventListener("click", () => setCanvasZoom(canvasZoom + CANVAS_ZOOM_STEP));
+      els.drawCanvasWrap.addEventListener("wheel", (event) => {
+        if (!event.ctrlKey) return;
+        event.preventDefault();
+        setCanvasZoom(canvasZoom + (event.deltaY < 0 ? CANVAS_ZOOM_STEP : -CANVAS_ZOOM_STEP));
+      }, { passive: false });
+      els.submitBtn.addEventListener("click", submitForCheck);
+      els.saveFishBtn.addEventListener("click", saveNamedFish);
+      els.fishName.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") saveNamedFish();
+      });
+      els.fishName.addEventListener("input", clearNameError);
+      els.tankCanvas.addEventListener("click", handleTankClick);
+      els.sortBtn.addEventListener("click", renderLeaderboard);
+      window.addEventListener("resize", () => {
+        renderAll();
+        if (els.fishModal.classList.contains("open")) updateCanvasStage();
+      });
+      window.addEventListener("beforeunload", saveState);
+      window.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        if (els.exitPrompt.classList.contains("open")) closeExitPrompt();
+        else if (els.introModal.classList.contains("open")) els.introModal.classList.remove("open");
+        else if (els.resultLayer.classList.contains("open")) closeResult();
+        else if (els.fishModal.classList.contains("open")) requestCloseFishModal();
+        else if (els.myFishModal.classList.contains("open")) closeMyFishModal();
+      });
+      document.querySelectorAll(".line-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          lineStyle = button.dataset.line;
+          document.querySelectorAll(".line-btn").forEach((item) => item.classList.toggle("active", item === button));
+          setTool("pen");
+        });
+      });
+      document.querySelectorAll(".swatch").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeColor = button.dataset.color;
+          document.querySelectorAll(".swatch").forEach((item) => item.classList.toggle("active", item === button));
+          setTool("pen");
+        });
+      });
+    }
+
+    function startDrawing(event) {
+      event.preventDefault();
+      saveUndo();
+      resetSubmission(false);
+      isDrawing = true;
+      lastPoint = getDrawPoint(event);
+      drawDot(lastPoint);
+    }
+
+    function drawMove(event) {
+      if (!isDrawing) return;
+      event.preventDefault();
+      const nextPoint = getDrawPoint(event);
+      drawStroke(lastPoint, nextPoint);
+      lastPoint = nextPoint;
+    }
+
+    function stopDrawing() {
+      if (!isDrawing) return;
+      isDrawing = false;
+      lastPoint = null;
+    }
+
+    function drawStroke(from, to) {
+      drawCtx.save();
+      applyStrokeSettings();
+      if (lineStyle === "dots" && tool !== "eraser") {
+        const distance = Math.hypot(to.x - from.x, to.y - from.y);
+        const steps = Math.max(1, Math.ceil(distance / Math.max(5, Number(els.brushSize.value) * 0.9)));
+        for (let index = 0; index <= steps; index += 1) {
+          const x = from.x + (to.x - from.x) * (index / steps);
+          const y = from.y + (to.y - from.y) * (index / steps);
+          drawCtx.beginPath();
+          drawCtx.arc(x, y, Number(els.brushSize.value) * 0.42, 0, Math.PI * 2);
+          drawCtx.fill();
+        }
+      } else {
+        drawCtx.beginPath();
+        drawCtx.moveTo(from.x, from.y);
+        drawCtx.lineTo(to.x, to.y);
+        drawCtx.stroke();
+      }
+      drawCtx.restore();
+    }
+
+    function drawDot(point) {
+      drawCtx.save();
+      applyStrokeSettings();
+      if (lineStyle === "dots" && tool !== "eraser") {
+        drawCtx.beginPath();
+        drawCtx.arc(point.x, point.y, Number(els.brushSize.value) * 0.42, 0, Math.PI * 2);
+        drawCtx.fill();
+      } else {
+        drawCtx.beginPath();
+        drawCtx.moveTo(point.x, point.y);
+        drawCtx.lineTo(point.x + 0.01, point.y + 0.01);
+        drawCtx.stroke();
+      }
+      drawCtx.restore();
+    }
+
+    function applyStrokeSettings() {
+      const size = Number(els.brushSize.value);
+      drawCtx.lineCap = lineStyle === "pencil" ? "butt" : "round";
+      drawCtx.lineJoin = "round";
+      drawCtx.lineWidth = lineStyle === "pencil" ? Math.max(1, size * 0.55) : size;
+      drawCtx.globalAlpha = lineStyle === "marker" ? 0.58 : 1;
+      drawCtx.setLineDash(lineStyle === "dashed" ? [size * 1.8, size * 1.15] : []);
+      if (tool === "eraser") {
+        drawCtx.globalCompositeOperation = "destination-out";
+        drawCtx.strokeStyle = "rgba(0,0,0,1)";
+        drawCtx.fillStyle = "rgba(0,0,0,1)";
+      } else {
+        drawCtx.globalCompositeOperation = "source-over";
+        drawCtx.strokeStyle = activeColor;
+        drawCtx.fillStyle = activeColor;
+      }
+    }
+
+    function getDrawPoint(event) {
+      const rect = els.drawCanvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * (DRAW_WIDTH / rect.width),
+        y: (event.clientY - rect.top) * (DRAW_HEIGHT / rect.height)
+      };
+    }
+
+    function saveUndo() {
+      undoStack.push(drawCtx.getImageData(0, 0, DRAW_WIDTH, DRAW_HEIGHT));
+      undoStack = undoStack.slice(-24);
+      els.undoBtn.disabled = undoStack.length === 0;
+    }
+
+    function undoDrawing() {
+      const previous = undoStack.pop();
+      if (!previous) return;
+      drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      drawCtx.putImageData(previous, 0, 0);
+      els.undoBtn.disabled = undoStack.length === 0;
+      resetSubmission(false);
+    }
+
+    function clearDrawing() {
+      saveUndo();
+      drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      resetSubmission();
+    }
+
+    function hasDrawing() {
+      const pixels = drawCtx.getImageData(0, 0, DRAW_WIDTH, DRAW_HEIGHT).data;
+      for (let index = 3; index < pixels.length; index += 4) {
+        if (pixels[index] > 24) return true;
+      }
+      return false;
+    }
+
+    function saveDraft() {
+      if (!hasDrawing()) {
+        showToast("画布还是空的，先画几笔吧");
+        return false;
+      }
+      try {
+        const draft = {
+          src: els.drawCanvas.toDataURL("image/png"),
+          width: DRAW_WIDTH,
+          height: DRAW_HEIGHT,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        updateDraftAvailability();
+        showToast("草稿已保存，下次打开也可以继续画");
+        return true;
+      } catch {
+        showToast("草稿太大，浏览器没有足够的保存空间");
+        return false;
+      }
+    }
+
+    function restoreDraft() {
+      let draft;
+      try {
+        draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      } catch {
+        draft = null;
+      }
+      if (!draft?.src) {
+        updateDraftAvailability();
+        showToast("还没有保存过草稿");
+        return;
+      }
+
+      const image = new Image();
+      image.onload = () => {
+        saveUndo();
+        drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+        drawCtx.drawImage(image, 0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+        resetSubmission();
+        const savedTime = new Date(draft.savedAt || Date.now()).toLocaleString("zh-CN", { hour12: false });
+        showToast(`已恢复 ${savedTime} 保存的草稿`);
+      };
+      image.onerror = () => {
+        localStorage.removeItem(DRAFT_KEY);
+        updateDraftAvailability();
+        showToast("草稿已经损坏，无法恢复");
+      };
+      image.src = draft.src;
+    }
+
+    function updateDraftAvailability() {
+      els.restoreDraftBtn.disabled = !localStorage.getItem(DRAFT_KEY);
+    }
+
+    function setTool(nextTool) {
+      tool = nextTool;
+      els.penBtn.classList.toggle("active", tool === "pen");
+      els.eraserBtn.classList.toggle("active", tool === "eraser");
+    }
+
+    function updateCanvasStage(preserveCenter = false) {
+      const wrap = els.drawCanvasWrap;
+      const stage = els.drawStage;
+      const oldWidth = stage.offsetWidth || 1;
+      const oldHeight = stage.offsetHeight || 1;
+      const centerX = preserveCenter
+        ? (wrap.scrollLeft + wrap.clientWidth / 2 - stage.offsetLeft) / oldWidth
+        : 0.5;
+      const centerY = preserveCenter
+        ? (wrap.scrollTop + wrap.clientHeight / 2 - stage.offsetTop) / oldHeight
+        : 0.5;
+      const wrapWidth = Math.max(100, wrap.clientWidth);
+      const wrapHeight = Math.max(100, wrap.clientHeight);
+      const baseWidth = wrapWidth;
+      const baseHeight = wrapHeight;
+
+      stage.style.width = `${Math.round(baseWidth * canvasZoom)}px`;
+      stage.style.height = `${Math.round(baseHeight * canvasZoom)}px`;
+      stage.style.placeSelf = canvasZoom <= 1 ? "center" : "start";
+      els.zoomValue.textContent = `${Math.round(canvasZoom * 100)}%`;
+      els.zoomOutBtn.disabled = canvasZoom <= MIN_CANVAS_ZOOM;
+      els.zoomInBtn.disabled = canvasZoom >= MAX_CANVAS_ZOOM;
+
+      if (preserveCenter) {
+        wrap.scrollLeft = stage.offsetLeft + centerX * stage.offsetWidth - wrap.clientWidth / 2;
+        wrap.scrollTop = stage.offsetTop + centerY * stage.offsetHeight - wrap.clientHeight / 2;
+      }
+    }
+
+    function setCanvasZoom(nextZoom) {
+      const rounded = Math.round(nextZoom / CANVAS_ZOOM_STEP) * CANVAS_ZOOM_STEP;
+      const bounded = Math.min(MAX_CANVAS_ZOOM, Math.max(MIN_CANVAS_ZOOM, rounded));
+      if (bounded === canvasZoom) return;
+      canvasZoom = bounded;
+      updateCanvasStage(true);
+    }
+
+    function openFishModal() {
+      updateDraftAvailability();
+      els.fishModal.classList.add("open");
+      requestAnimationFrame(() => updateCanvasStage());
+      els.drawCanvas.focus?.();
+    }
+
+    function closeFishModal() {
+      closeExitPrompt();
+      closeResult();
+      els.fishModal.classList.remove("open");
+    }
+
+    function requestCloseFishModal() {
+      if (!hasDrawing()) {
+        closeFishModal();
+        return;
+      }
+      els.exitPrompt.classList.add("open");
+    }
+
+    function closeExitPrompt() {
+      els.exitPrompt.classList.remove("open");
+    }
+
+    function saveAndExit() {
+      if (!saveDraft()) return;
+      clearCanvasWithoutUndo();
+      resetSubmission();
+      closeFishModal();
+    }
+
+    function discardAndExit() {
+      clearCanvasWithoutUndo();
+      resetSubmission();
+      closeFishModal();
+    }
+
+    function closeResult() {
+      els.resultLayer.classList.remove("open");
+    }
+
+    function resetSubmission(clearName = true) {
+      currentScore = 0;
+      currentBreakdown = [];
+      pendingFishImage = null;
+      pendingFacing = 1;
+      closeResult();
+      els.resultBox.classList.remove("show");
+      els.nameStep.classList.remove("show");
+      els.scoreText.textContent = "0%";
+      els.scoreFill.style.width = "0%";
+      els.scoreFill.classList.remove("pass");
+      els.scoreNote.textContent = "提交后检测";
+      clearNameError();
+      if (clearName) els.fishName.value = "";
+    }
+
+    function submitForCheck() {
+      const result = analyzeDrawing();
+      currentScore = result.score;
+      currentBreakdown = result.breakdown;
+      pendingFacing = result.facing || 1;
+      els.resultLayer.classList.add("open");
+      els.resultBox.classList.add("show");
+      els.scoreText.textContent = `${currentScore}%`;
+      els.scoreFill.style.width = `${currentScore}%`;
+      els.scoreFill.classList.toggle("pass", currentScore >= PASS_SCORE);
+
+      if (currentScore < PASS_SCORE) {
+        els.nameStep.classList.remove("show");
+        pendingFishImage = null;
+        const suggestion = getQualitySuggestion(currentBreakdown);
+        els.scoreNote.textContent = `很抱歉，您的鱼苗没有通过质检，如果${suggestion}会更好哦。`;
+        showToast(`相似度 ${currentScore}%，没有通过`);
+        return;
+      }
+
+      const crop = createTrimmedFishImage();
+      if (!crop) {
+        els.scoreNote.textContent = "画布是空的";
+        showToast("画布是空的");
+        return;
+      }
+
+      pendingFishImage = crop;
+      els.scoreNote.textContent = `通过，相似度 ${currentScore}%`;
+      els.nameStep.classList.add("show");
+      els.fishName.focus();
+    }
+
+    function getQualitySuggestion(items) {
+      const replacements = new Map([
+        ["线条太少", "增加一些鱼身线条"],
+        ["鱼形太小", "把鱼身画得更完整"],
+        ["鱼身比例不像简笔鱼", "把鱼身画得稍长一些"],
+        ["鱼身主体不够完整", "补完整中间的鱼身"],
+        ["需要画出收窄后张开的尾鳍", "画出收窄后张开的尾鳍"],
+        ["鱼身轮廓需要闭合", "把鱼身轮廓闭合起来"],
+        ["加上眼睛或鱼鳍会更像鱼", "加上眼睛或鱼鳍"]
+      ]);
+      return (items.length ? items : ["鱼形还不够明显"])
+        .slice(0, 2)
+        .map((item) => replacements.get(item) || item)
+        .join("，");
+    }
+
+    async function saveNamedFish() {
+      if (!pendingFishImage || currentScore < PASS_SCORE) {
+        showToast("先提交检测，通过后再取名");
+        return;
+      }
+      const name = els.fishName.value.trim();
+      if (!name) {
+        showToast("为你的小鱼取个名字吧");
+        return;
+      }
+      const normalizedName = name.toLocaleLowerCase("zh-CN");
+      if (state.fish.some((fish) => fish.name.trim().toLocaleLowerCase("zh-CN") === normalizedName)) {
+        showNameError(`已经有这条叫${name}的小鱼了哦，请换个名字`);
+        return;
+      }
+      clearNameError();
+
+      const visual = getNextFishVisual();
+      let fish = {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        name,
+        src: pendingFishImage.src,
+        imageWidth: pendingFishImage.width,
+        imageHeight: pendingFishImage.height,
+        createdAt: Date.now(),
+        hearts: 0,
+        x: Math.random(),
+        y: visual.y,
+        speed: 0.018 + Math.random() * 0.035,
+        size: visual.size,
+        depth: visual.depth,
+        facing: pendingFacing,
+        swimDirection: Math.random() < 0.5 ? -1 : 1,
+        orientationVersion: 2,
+        ownerId: clientId,
+        bob: Math.random() * Math.PI * 2
+      };
+
+      els.saveFishBtn.disabled = true;
+      try {
+        if (SHARED_MODE) {
+          const response = await apiRequest("/api/fish", { method: "POST", body: fish });
+          fish = normalizeFish(response.fish);
+        }
+        state.fish.push(fish);
+        saveState();
+      } catch (error) {
+        if (error.status === 409 || String(error.message).startsWith("已经有这条叫")) {
+          showNameError(`已经有这条叫${name}的小鱼了哦，请换个名字`);
+        } else {
+          showToast(error.message || "鱼苗入缸失败，请稍后重试");
+        }
+        els.saveFishBtn.disabled = false;
+        return;
+      }
+      dropAnimations.set(fish.id, { started: performance.now(), duration: 1500 });
+      clearCanvasWithoutUndo();
+      localStorage.removeItem(DRAFT_KEY);
+      updateDraftAvailability();
+      resetSubmission();
+      els.saveFishBtn.disabled = false;
+      closeFishModal();
+      renderAll();
+      showToast(`${fish.name} 正在入缸`);
+    }
+
+    function clearCanvasWithoutUndo() {
+      drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      undoStack = [];
+      els.undoBtn.disabled = true;
+    }
+
+    function getNextFishVisual() {
+      const index = state.fish.length;
+      const lanes = [
+        { depth: 0.22, size: 74, y: 0.24 },
+        { depth: 0.78, size: 132, y: 0.58 },
+        { depth: 0.38, size: 92, y: 0.33 },
+        { depth: 0.92, size: 148, y: 0.66 },
+        { depth: 0.28, size: 82, y: 0.42 },
+        { depth: 0.68, size: 118, y: 0.52 },
+        { depth: 0.48, size: 102, y: 0.46 }
+      ];
+      const lane = lanes[index % lanes.length];
+      return {
+        depth: lane.depth,
+        size: lane.size + Math.random() * 12 - 6,
+        y: Math.max(0.18, Math.min(0.72, lane.y + Math.random() * 0.08 - 0.04))
+      };
+    }
+
+    function analyzeDrawing() {
+      const image = drawCtx.getImageData(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      const data = image.data;
+      let minX = DRAW_WIDTH;
+      let minY = DRAW_HEIGHT;
+      let maxX = -1;
+      let maxY = -1;
+      let count = 0;
+
+      for (let y = 0; y < DRAW_HEIGHT; y += 1) {
+        for (let x = 0; x < DRAW_WIDTH; x += 1) {
+          const alpha = data[(y * DRAW_WIDTH + x) * 4 + 3];
+          if (alpha > 24) {
+            count += 1;
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      if (count < 260) {
+        return { score: 0, breakdown: ["线条太少"], facing: 1 };
+      }
+
+      const width = maxX - minX + 1;
+      const height = maxY - minY + 1;
+      if (width < 110 || height < 50) {
+        return { score: 16, breakdown: ["鱼形太小"], facing: 1 };
+      }
+
+      const gridWidth = 48;
+      const gridHeight = 28;
+      const grid = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(false));
+      const columnMin = Array(gridWidth).fill(gridHeight);
+      const columnMax = Array(gridWidth).fill(-1);
+      let top = 0;
+      let bottom = 0;
+
+      for (let y = minY; y <= maxY; y += 1) {
+        for (let x = minX; x <= maxX; x += 1) {
+          const alpha = data[(y * DRAW_WIDTH + x) * 4 + 3];
+          if (alpha <= 24) continue;
+          const nx = (x - minX) / width;
+          const ny = (y - minY) / height;
+          const gx = Math.min(gridWidth - 1, Math.floor(nx * gridWidth));
+          const gy = Math.min(gridHeight - 1, Math.floor(ny * gridHeight));
+          grid[gy][gx] = true;
+          columnMin[gx] = Math.min(columnMin[gx], gy);
+          columnMax[gx] = Math.max(columnMax[gx], gy);
+          if (ny < 0.5) top += 1;
+          if (ny >= 0.5) bottom += 1;
+        }
+      }
+
+      const ratio = width / height;
+      const symmetry = 1 - Math.min(1, Math.abs(top - bottom) / Math.max(1, top + bottom));
+      const spanAt = (from, to) => {
+        let min = gridHeight;
+        let max = -1;
+        for (let x = from; x <= to; x += 1) {
+          min = Math.min(min, columnMin[x]);
+          max = Math.max(max, columnMax[x]);
+        }
+        return max >= min ? max - min + 1 : 0;
+      };
+      const leftOuter = spanAt(0, 6);
+      const leftNeck = spanAt(8, 13);
+      const rightOuter = spanAt(41, 47);
+      const rightNeck = spanAt(34, 39);
+      const bodySpan = spanAt(15, 32);
+      const leftFlare = leftOuter / Math.max(1, leftNeck);
+      const rightFlare = rightOuter / Math.max(1, rightNeck);
+      const tailFlare = Math.max(leftFlare, rightFlare);
+      const columnSpan = columnMin.map((min, index) => columnMax[index] >= min ? columnMax[index] - min + 1 : 0);
+      const profileVariation = (from, to) => {
+        let variation = 0;
+        for (let x = from + 1; x <= to; x += 1) {
+          variation += Math.abs(columnSpan[x] - columnSpan[x - 1]);
+        }
+        return variation;
+      };
+      const leftVariation = profileVariation(0, 23);
+      const rightVariation = profileVariation(24, 47);
+      const tailArticulation = Math.max(leftVariation, rightVariation) / Math.max(1, bodySpan);
+      const variationIsDirectional = Math.max(leftVariation, rightVariation) > Math.min(leftVariation, rightVariation) * 1.25;
+      const tailOnLeft = variationIsDirectional ? leftVariation > rightVariation : leftFlare >= rightFlare;
+      const facing = tailOnLeft ? 1 : -1;
+
+      const visited = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(false));
+      const queue = [];
+      for (let x = 0; x < gridWidth; x += 1) queue.push([x, 0], [x, gridHeight - 1]);
+      for (let y = 1; y < gridHeight - 1; y += 1) queue.push([0, y], [gridWidth - 1, y]);
+      while (queue.length) {
+        const [x, y] = queue.shift();
+        if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight || visited[y][x] || grid[y][x]) continue;
+        visited[y][x] = true;
+        queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      }
+      let enclosed = 0;
+      let occupiedCells = 0;
+      let detailComponents = 0;
+      const inkVisited = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(false));
+      for (let y = 0; y < gridHeight; y += 1) {
+        for (let x = 0; x < gridWidth; x += 1) {
+          if (!grid[y][x] && !visited[y][x]) enclosed += 1;
+          if (!grid[y][x]) continue;
+          occupiedCells += 1;
+          if (inkVisited[y][x]) continue;
+          detailComponents += 1;
+          const component = [[x, y]];
+          inkVisited[y][x] = true;
+          while (component.length) {
+            const [cx, cy] = component.pop();
+            [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => {
+              const nx = cx + dx;
+              const ny = cy + dy;
+              if (nx >= 0 && ny >= 0 && nx < gridWidth && ny < gridHeight && grid[ny][nx] && !inkVisited[ny][nx]) {
+                inkVisited[ny][nx] = true;
+                component.push([nx, ny]);
+              }
+            });
+          }
+        }
+      }
+
+      const aspectScore = scorePeak(ratio, 1.25, 2.15, 3.65) * 15;
+      const bodyScore = Math.min(1, Math.max(0, bodySpan - 9) / 10) * 22;
+      const flareTailScore = scorePeak(tailFlare, 1.05, 1.75, 3.4) * 22;
+      const articulatedTailScore = scorePeak(tailArticulation, 0.35, 1.45, 4.2) * 20;
+      const tailScore = Math.max(flareTailScore, articulatedTailScore);
+      const outlineScore = Math.min(1, enclosed / 150) * 18;
+      const symmetryScore = scorePeak(symmetry, 0.52, 0.88, 1.01) * 8;
+      const detailScore = Math.min(1, Math.max(0, detailComponents - 1) / 2) * 8;
+      const structureDensity = occupiedCells / (gridWidth * gridHeight);
+      const densityScore = scorePeak(structureDensity, 0.045, 0.16, 0.42) * 7;
+
+      const total = Math.round(
+        aspectScore +
+        bodyScore +
+        tailScore +
+        outlineScore +
+        symmetryScore +
+        detailScore +
+        densityScore
+      );
+
+      const breakdown = [];
+      if (total >= PASS_SCORE) {
+        breakdown.push("通过");
+      } else {
+        if (aspectScore < 10) breakdown.push("鱼身比例不像简笔鱼");
+        if (bodyScore < 15) breakdown.push("鱼身主体不够完整");
+        if (tailScore < 15) breakdown.push("尾鳍轮廓可以再明显一些");
+        if (outlineScore < 12) breakdown.push("鱼身轮廓需要闭合");
+        if (detailScore < 4) breakdown.push("加上眼睛或鱼鳍会更像鱼");
+      }
+
+      return {
+        score: Math.max(0, Math.min(100, total)),
+        breakdown,
+        facing
+      };
+    }
+
+    function scorePeak(value, min, target, max) {
+      if (value <= min || value >= max) return 0;
+      if (value === target) return 1;
+      if (value < target) return (value - min) / (target - min);
+      return (max - value) / (max - target);
+    }
+
+    function createTrimmedFishImage() {
+      const image = drawCtx.getImageData(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      const data = image.data;
+      let minX = DRAW_WIDTH;
+      let minY = DRAW_HEIGHT;
+      let maxX = -1;
+      let maxY = -1;
+
+      for (let y = 0; y < DRAW_HEIGHT; y += 1) {
+        for (let x = 0; x < DRAW_WIDTH; x += 1) {
+          if (data[(y * DRAW_WIDTH + x) * 4 + 3] > 24) {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      if (maxX < 0) return null;
+
+      const padding = 18;
+      minX = Math.max(0, minX - padding);
+      minY = Math.max(0, minY - padding);
+      maxX = Math.min(DRAW_WIDTH - 1, maxX + padding);
+      maxY = Math.min(DRAW_HEIGHT - 1, maxY + padding);
+
+      const cropWidth = maxX - minX + 1;
+      const cropHeight = maxY - minY + 1;
+      const scale = Math.min(1, 300 / cropWidth, 180 / cropHeight);
+      const outWidth = Math.max(40, Math.round(cropWidth * scale));
+      const outHeight = Math.max(28, Math.round(cropHeight * scale));
+      const output = document.createElement("canvas");
+      output.width = outWidth;
+      output.height = outHeight;
+      const outputCtx = output.getContext("2d");
+      outputCtx.imageSmoothingEnabled = true;
+      outputCtx.imageSmoothingQuality = "high";
+      outputCtx.drawImage(els.drawCanvas, minX, minY, cropWidth, cropHeight, 0, 0, outWidth, outHeight);
+
+      return {
+        src: output.toDataURL("image/png"),
+        width: outWidth,
+        height: outHeight
+      };
+    }
+
+    function renderAll() {
+      els.fishCount.textContent = state.fish.length;
+      els.heartCount.textContent = state.fish.reduce((sum, fish) => sum + fish.hearts, 0);
+      els.emptyTank.hidden = state.fish.length > 0;
+      renderLeaderboard();
+      renderMaintenance();
+      if (els.myFishModal.classList.contains("open")) renderMyFish();
+    }
+
+    function openMyFishModal() {
+      renderMyFish();
+      els.myFishModal.classList.add("open");
+    }
+
+    function closeMyFishModal() {
+      els.myFishModal.classList.remove("open");
+    }
+
+    function renderMyFish() {
+      const owned = state.fish
+        .filter((fish) => isOwnFish(fish) && canDeleteFish(fish))
+        .sort((a, b) => b.createdAt - a.createdAt);
+      els.myFishSummary.textContent = `当前有 ${owned.length} 条鱼苗可以删除`;
+      els.myFishList.innerHTML = "";
+
+      if (!owned.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-list";
+        empty.textContent = "目前没有可删除的鱼苗";
+        els.myFishList.appendChild(empty);
+        return;
+      }
+
+      owned.forEach((fish) => {
+        const row = document.createElement("div");
+        row.className = "my-fish-row";
+
+        const thumb = document.createElement("img");
+        thumb.className = "my-fish-thumb";
+        thumb.src = fish.src;
+        thumb.alt = fish.name;
+
+        const info = document.createElement("div");
+        info.className = "my-fish-info";
+        const name = document.createElement("div");
+        name.className = "my-fish-name";
+        name.textContent = fish.name;
+        const meta = document.createElement("div");
+        meta.className = "my-fish-meta";
+        const remaining = Math.max(0, DELETE_WINDOW_MS - (Date.now() - fish.createdAt));
+        meta.textContent = `♥ ${fish.hearts} · 还可删除 ${formatRemainingTime(remaining)}`;
+        info.append(name, meta);
+
+        const remove = document.createElement("button");
+        remove.className = "my-fish-delete";
+        remove.type = "button";
+        remove.textContent = "删除";
+        remove.addEventListener("click", () => deleteOwnFish(fish.id));
+
+        row.append(thumb, info, remove);
+        els.myFishList.appendChild(row);
+      });
+    }
+
+    function formatRemainingTime(milliseconds) {
+      const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+      return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+    }
+
+    function renderLeaderboard() {
+      els.leaderboard.innerHTML = "";
+      const sorted = [...state.fish].sort((a, b) => b.hearts - a.hearts || b.createdAt - a.createdAt).slice(0, 15);
+      leaderFishId = sorted[0]?.id || null;
+      if (!sorted.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-list";
+        empty.textContent = "暂无排名";
+        els.leaderboard.appendChild(empty);
+        return;
+      }
+
+      sorted.forEach((fish, index) => {
+        const row = document.createElement("div");
+        row.className = "rank-row";
+
+        const no = document.createElement("div");
+        no.className = "rank-no";
+        no.textContent = index + 1;
+
+        const thumb = document.createElement("img");
+        thumb.className = "rank-thumb";
+        thumb.src = fish.src;
+        thumb.alt = fish.name;
+
+        const info = document.createElement("div");
+        info.className = "rank-info";
+        const name = document.createElement("div");
+        name.className = "rank-name";
+        name.textContent = fish.name;
+        info.append(name);
+
+        const actions = document.createElement("div");
+        actions.className = "rank-actions";
+
+        const like = document.createElement("button");
+        like.className = "heart-btn";
+        like.type = "button";
+        like.textContent = `♥ ${fish.hearts}`;
+        like.title = `给 ${fish.name} 点赞`;
+        like.addEventListener("click", () => likeFish(fish.id));
+        actions.appendChild(like);
+
+        if (canDeleteFish(fish)) {
+          const remove = document.createElement("button");
+          remove.className = "delete-btn";
+          remove.type = "button";
+          remove.textContent = "×";
+          remove.title = `删除 ${fish.name}`;
+          remove.setAttribute("aria-label", `删除 ${fish.name}`);
+          remove.addEventListener("click", () => deleteOwnFish(fish.id));
+          actions.appendChild(remove);
+        }
+
+        row.append(no, thumb, info, actions);
+        els.leaderboard.appendChild(row);
+      });
+    }
+
+    function renderMaintenance() {
+      const cutoff = new Date(getEightMonthCutoff());
+      const next = new Date();
+      next.setMonth(next.getMonth() + 8);
+      els.cleanupText.textContent = `${cutoff.toLocaleDateString("zh-CN")} 之前提交的鱼会被自动移出`;
+      const removed = state.lastRemovedCount ? `，移出 ${state.lastRemovedCount} 条` : "";
+      els.lastCleanupText.textContent = `本次检查：${new Date(state.lastCleanupAt || Date.now()).toLocaleString("zh-CN", { hour12: false })}${removed}`;
+    }
+
+    function drawTank(time) {
+      const size = resizeTankCanvas();
+      const width = size.width;
+      const height = size.height;
+      const t = time / 1000;
+      hitboxes = [];
+
+      tankCtx.clearRect(0, 0, width, height);
+      drawWater(width, height, t);
+      drawTankPlants(width, height, t);
+      drawStoredFish(width, height, t);
+      drawForeground(width, height, t);
+
+      if (likeBurst && performance.now() - likeBurst.started < 720) {
+        drawLikeBurst(likeBurst, performance.now());
+      } else {
+        likeBurst = null;
+      }
+
+      requestAnimationFrame(drawTank);
+    }
+
+    function resizeTankCanvas() {
+      const rect = els.tankCanvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(320, Math.floor(rect.width));
+      const height = Math.max(360, Math.floor(rect.height));
+      const pxWidth = Math.floor(width * dpr);
+      const pxHeight = Math.floor(height * dpr);
+      if (els.tankCanvas.width !== pxWidth || els.tankCanvas.height !== pxHeight) {
+        els.tankCanvas.width = pxWidth;
+        els.tankCanvas.height = pxHeight;
+      }
+      tankCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { width, height };
+    }
+
+    function drawWater(width, height, time, pawTouch = 0) {
+      const waterTop = getWaterTop(height);
+      tankCtx.fillStyle = "#f4faf7";
+      tankCtx.fillRect(0, 0, width, waterTop);
+      const gradient = tankCtx.createLinearGradient(0, waterTop, 0, height);
+      gradient.addColorStop(0, "#d8f3f0");
+      gradient.addColorStop(0.48, "#8fd3da");
+      gradient.addColorStop(1, "#287fa1");
+      tankCtx.fillStyle = gradient;
+      tankCtx.fillRect(0, waterTop, width, height - waterTop);
+
+      tankCtx.save();
+      tankCtx.globalAlpha = 0.12;
+      tankCtx.fillStyle = "#ffffff";
+      for (let index = 0; index < 5; index += 1) {
+        const origin = width * (0.08 + index * 0.22) + Math.sin(time * 0.18 + index) * 24;
+        tankCtx.beginPath();
+        tankCtx.moveTo(origin, waterTop);
+        tankCtx.lineTo(origin + 42, waterTop);
+        tankCtx.lineTo(origin + 155, height * 0.7);
+        tankCtx.lineTo(origin + 82, height * 0.7);
+        tankCtx.closePath();
+        tankCtx.fill();
+      }
+      tankCtx.restore();
+
+      tankCtx.strokeStyle = "rgba(255,255,255,0.28)";
+      tankCtx.lineWidth = 2;
+      for (let y = waterTop + 30; y < height - 60; y += 44) {
+        tankCtx.beginPath();
+        for (let x = -30; x <= width + 30; x += 22) {
+          const wave = y + Math.sin(time * 0.8 + x * 0.025 + y * 0.02) * 5;
+          if (x === -30) tankCtx.moveTo(x, wave);
+          else tankCtx.lineTo(x, wave);
+        }
+        tankCtx.stroke();
+      }
+
+      tankCtx.fillStyle = "rgba(255,255,255,0.32)";
+      for (let i = 0; i < 32; i += 1) {
+        const x = ((i * 97 + time * (12 + i % 5)) % (width + 70)) - 35;
+        const waterHeight = Math.max(120, height - waterTop - 70);
+        const y = height - 45 - ((time * (18 + i % 7) + i * 53) % waterHeight);
+        const radius = 2 + (i % 4);
+        tankCtx.beginPath();
+        tankCtx.arc(x, y, radius, 0, Math.PI * 2);
+        tankCtx.fill();
+      }
+
+      if (pawTouch > 0.03) {
+        const rippleX = width - 142 + Math.sin(time * 0.9) * 6;
+        const rippleY = waterTop + 6;
+        tankCtx.save();
+        tankCtx.strokeStyle = `rgba(255,255,255,${0.34 * pawTouch})`;
+        tankCtx.lineWidth = 1.8;
+        for (let i = 0; i < 3; i += 1) {
+          const radius = 10 + i * 12 + pawTouch * 12;
+          tankCtx.beginPath();
+          tankCtx.ellipse(rippleX, rippleY, radius * 1.55, radius * 0.42, 0, 0, Math.PI * 2);
+          tankCtx.stroke();
+        }
+        tankCtx.restore();
+      }
+    }
+
+    function getWaterTop(height) {
+      return 0;
+    }
+
+    function drawSideCat(width, height, time, paw) {
+      const scale = Math.max(0.82, Math.min(1.08, width / 1100));
+      const baseX = width - 104 * scale;
+      const baseY = 102 * scale;
+      const bob = Math.sin(time * 0.8) * 2;
+      const reach = paw.touch;
+
+      tankCtx.save();
+      tankCtx.translate(baseX, baseY + bob);
+      tankCtx.scale(scale, scale);
+
+      tankCtx.globalAlpha = 0.9;
+      tankCtx.fillStyle = "rgba(248, 218, 160, 0.32)";
+      tankCtx.beginPath();
+      tankCtx.ellipse(42, 78, 106, 58, -0.18, 0, Math.PI * 2);
+      tankCtx.fill();
+
+      tankCtx.globalAlpha = 1;
+      tankCtx.fillStyle = "#d9a759";
+      tankCtx.strokeStyle = "rgba(92, 63, 38, 0.46)";
+      tankCtx.lineWidth = 2.2;
+
+      tankCtx.beginPath();
+      tankCtx.ellipse(2, 58, 72, 44, -0.25, 0, Math.PI * 2);
+      tankCtx.fill();
+      tankCtx.stroke();
+
+      tankCtx.beginPath();
+      tankCtx.ellipse(-58, 48, 28, 25, -0.2, 0, Math.PI * 2);
+      tankCtx.fill();
+      tankCtx.stroke();
+
+      tankCtx.beginPath();
+      tankCtx.moveTo(-78, 27);
+      tankCtx.lineTo(-70, -4);
+      tankCtx.lineTo(-48, 26);
+      tankCtx.closePath();
+      tankCtx.fill();
+      tankCtx.stroke();
+
+      tankCtx.beginPath();
+      tankCtx.moveTo(-45, 26);
+      tankCtx.lineTo(-28, 2);
+      tankCtx.lineTo(-23, 35);
+      tankCtx.closePath();
+      tankCtx.fill();
+      tankCtx.stroke();
+
+      tankCtx.strokeStyle = "rgba(128, 83, 44, 0.52)";
+      tankCtx.lineWidth = 2.5;
+      for (let i = 0; i < 4; i += 1) {
+        tankCtx.beginPath();
+        tankCtx.moveTo(-6 + i * 17, 22);
+        tankCtx.quadraticCurveTo(5 + i * 18, 45, -2 + i * 16, 86);
+        tankCtx.stroke();
+      }
+
+      tankCtx.strokeStyle = "#d9a759";
+      tankCtx.lineWidth = 14;
+      tankCtx.lineCap = "round";
+      tankCtx.beginPath();
+      tankCtx.moveTo(58, 48);
+      tankCtx.bezierCurveTo(104, 18, 86, -42, 38, -28);
+      tankCtx.stroke();
+      tankCtx.strokeStyle = "rgba(92, 63, 38, 0.46)";
+      tankCtx.lineWidth = 2;
+      tankCtx.beginPath();
+      tankCtx.moveTo(58, 48);
+      tankCtx.bezierCurveTo(104, 18, 86, -42, 38, -28);
+      tankCtx.stroke();
+
+      drawSideCatPaw(-10, 98, 0);
+      drawSideCatPaw(-48 + reach * 18, 100 + reach * 58, reach);
+
+      tankCtx.fillStyle = "#4b3428";
+      tankCtx.beginPath();
+      tankCtx.arc(-66, 44, 3.3, 0, Math.PI * 2);
+      tankCtx.fill();
+      tankCtx.strokeStyle = "rgba(75, 52, 40, 0.74)";
+      tankCtx.lineWidth = 1.5;
+      tankCtx.beginPath();
+      tankCtx.moveTo(-56, 51);
+      tankCtx.quadraticCurveTo(-48, 58, -38, 52);
+      tankCtx.stroke();
+      tankCtx.restore();
+    }
+
+    function drawSideCatReference(width, height, time, paw) {
+      const scale = Math.max(0.58, Math.min(0.72, width / 1500));
+      const reach = paw.touch;
+      tankCtx.save();
+      tankCtx.translate(width - 170 * scale, Math.max(5, getWaterTop(height) - 150 * scale) + Math.sin(time * 0.7) * 1.2);
+      tankCtx.scale(scale, scale);
+      tankCtx.lineCap = "round";
+
+      tankCtx.fillStyle = "rgba(212,132,39,.9)";
+      tankCtx.strokeStyle = "rgba(86,49,24,.42)";
+      tankCtx.lineWidth = 2;
+      tankCtx.beginPath();
+      tankCtx.ellipse(18, 79, 62, 55, 0, 0, Math.PI * 2);
+      tankCtx.fill();
+      tankCtx.stroke();
+
+      // A clearly visible striped tail curls along the rim, like the reference cat.
+      tankCtx.strokeStyle = "#bd7428";
+      tankCtx.lineWidth = 22;
+      tankCtx.beginPath();
+      tankCtx.moveTo(68, 88);
+      tankCtx.bezierCurveTo(137, 94, 143, 142, 77, 148);
+      tankCtx.bezierCurveTo(25, 153, -12, 128, 16, 111);
+      tankCtx.stroke();
+      tankCtx.strokeStyle = "rgba(77,45,28,.66)";
+      tankCtx.lineWidth = 7;
+      [[111,103,-5],[124,119,-4],[111,137,-2],[82,146,1],[50,147,3],[23,134,5]].forEach(([x,y,tilt]) => {
+        tankCtx.beginPath();
+        tankCtx.moveTo(x - 9, y - 5 + tilt);
+        tankCtx.lineTo(x + 9, y + 5 - tilt);
+        tankCtx.stroke();
+      });
+
+      const fur = tankCtx.createRadialGradient(-18, 25, 8, 0, 35, 78);
+      fur.addColorStop(0, "#ffdc83");
+      fur.addColorStop(.68, "#eda33c");
+      fur.addColorStop(1, "#bd6d25");
+      tankCtx.fillStyle = fur;
+      tankCtx.strokeStyle = "rgba(84,48,25,.52)";
+      tankCtx.lineWidth = 2.4;
+      tankCtx.beginPath();
+      tankCtx.moveTo(-57, 9);
+      tankCtx.lineTo(-48, -35);
+      tankCtx.lineTo(-18, -7);
+      tankCtx.bezierCurveTo(10, -18, 43, -8, 58, 15);
+      tankCtx.lineTo(65, -31);
+      tankCtx.lineTo(91, 1);
+      tankCtx.bezierCurveTo(101, 48, 68, 82, 18, 84);
+      tankCtx.bezierCurveTo(-34, 86, -73, 58, -57, 9);
+      tankCtx.closePath();
+      tankCtx.fill();
+      tankCtx.stroke();
+
+      tankCtx.fillStyle = "#e78d62";
+      tankCtx.beginPath();
+      tankCtx.moveTo(-47,-25); tankCtx.lineTo(-22,-5); tankCtx.lineTo(-42,5);
+      tankCtx.moveTo(67,-21); tankCtx.lineTo(84,1); tankCtx.lineTo(62,9);
+      tankCtx.fill();
+      tankCtx.strokeStyle = "rgba(81,45,25,.68)";
+      tankCtx.lineWidth = 7;
+      [-9,14,36].forEach((x) => {
+        tankCtx.beginPath();
+        tankCtx.moveTo(x,-7);
+        tankCtx.quadraticCurveTo(x,7,x + (x < 10 ? 8 : -5),18);
+        tankCtx.stroke();
+      });
+
+      tankCtx.fillStyle = "#f8f1d8";
+      tankCtx.beginPath();
+      tankCtx.ellipse(-9,46,19,17,-.08,0,Math.PI*2);
+      tankCtx.ellipse(42,45,19,17,.08,0,Math.PI*2);
+      tankCtx.fill();
+      tankCtx.fillStyle = "#13272a";
+      tankCtx.beginPath();
+      tankCtx.ellipse(-7,46,9,12,0,0,Math.PI*2);
+      tankCtx.ellipse(40,44,9,12,0,0,Math.PI*2);
+      tankCtx.fill();
+      tankCtx.fillStyle = "white";
+      tankCtx.beginPath();
+      tankCtx.arc(-10,42,3.2,0,Math.PI*2);
+      tankCtx.arc(37,40,3.2,0,Math.PI*2);
+      tankCtx.fill();
+      tankCtx.fillStyle = "#fff2df";
+      tankCtx.beginPath();
+      tankCtx.ellipse(4,68,20,13,0,0,Math.PI*2);
+      tankCtx.ellipse(31,67,20,13,0,0,Math.PI*2);
+      tankCtx.fill();
+      tankCtx.fillStyle = "#d56d67";
+      tankCtx.beginPath();
+      tankCtx.moveTo(11,62); tankCtx.quadraticCurveTo(18,57,25,62); tankCtx.quadraticCurveTo(18,70,11,62);
+      tankCtx.fill();
+      tankCtx.strokeStyle = "rgba(78,46,28,.62)";
+      tankCtx.lineWidth = 1.5;
+      tankCtx.beginPath();
+      tankCtx.moveTo(8,69); tankCtx.lineTo(-38,61); tankCtx.moveTo(7,74); tankCtx.lineTo(-41,76);
+      tankCtx.moveTo(28,69); tankCtx.lineTo(74,61); tankCtx.moveTo(29,74); tankCtx.lineTo(77,76);
+      tankCtx.stroke();
+
+      drawSideCatPaw(-23, 106, 0);
+      drawSideCatPaw(54 - reach * 10, 106 + reach * 62, reach);
+      tankCtx.restore();
+    }
+
+    function drawSideCatPaw(x, y, touch) {
+      tankCtx.save();
+      tankCtx.fillStyle = "#edaa4a";
+      tankCtx.strokeStyle = "rgba(92, 63, 38, 0.44)";
+      tankCtx.lineWidth = 2;
+      tankCtx.beginPath();
+      tankCtx.ellipse(x, y, 19, 15 + touch * 2, -0.08, 0, Math.PI * 2);
+      tankCtx.fill();
+      tankCtx.stroke();
+      tankCtx.fillStyle = "rgba(92,63,38,0.38)";
+      for (let i = 0; i < 3; i += 1) {
+        tankCtx.beginPath();
+        tankCtx.arc(x - 7 + i * 7, y + 3, 1.8, 0, Math.PI * 2);
+        tankCtx.fill();
+      }
+      tankCtx.restore();
+    }
+
+    function getCatPawMotion(time) {
+      const period = 4.8;
+      const phase = (time % period) / period;
+      const reach = phase < 0.58 ? 0 : Math.sin(Math.min(1, (phase - 0.58) / 0.42) * Math.PI);
+      return {
+        phase,
+        touch: Math.max(0, reach)
+      };
+    }
+
+    function drawCat(time, paw) {
+      const rect = els.catCanvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(180, Math.floor(rect.width));
+      const height = Math.max(82, Math.floor(rect.height));
+      const pxWidth = Math.floor(width * dpr);
+      const pxHeight = Math.floor(height * dpr);
+      if (els.catCanvas.width !== pxWidth || els.catCanvas.height !== pxHeight) {
+        els.catCanvas.width = pxWidth;
+        els.catCanvas.height = pxHeight;
+      }
+      catCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      catCtx.clearRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const bob = Math.sin(time * 0.9) * 1.5;
+      const pawDrop = paw.touch * 20;
+
+      catCtx.save();
+      catCtx.translate(0, bob);
+      catCtx.fillStyle = "rgba(255,255,255,0.34)";
+      catCtx.beginPath();
+      catCtx.ellipse(cx, 58, 98, 38, 0, 0, Math.PI * 2);
+      catCtx.fill();
+
+      catCtx.fillStyle = "#f2d4b4";
+      catCtx.strokeStyle = "rgba(84, 55, 41, 0.35)";
+      catCtx.lineWidth = 2;
+      catCtx.beginPath();
+      catCtx.ellipse(cx, 44, 66, 34, 0, 0, Math.PI * 2);
+      catCtx.fill();
+      catCtx.stroke();
+
+      catCtx.beginPath();
+      catCtx.moveTo(cx - 45, 21);
+      catCtx.lineTo(cx - 30, 0);
+      catCtx.lineTo(cx - 12, 24);
+      catCtx.closePath();
+      catCtx.fill();
+      catCtx.stroke();
+      catCtx.beginPath();
+      catCtx.moveTo(cx + 45, 21);
+      catCtx.lineTo(cx + 30, 0);
+      catCtx.lineTo(cx + 12, 24);
+      catCtx.closePath();
+      catCtx.fill();
+      catCtx.stroke();
+
+      drawCatPaw(cx - 38, 71, 0);
+      drawCatPaw(cx + 28, 72 + pawDrop, paw.touch);
+
+      catCtx.fillStyle = "#5c4237";
+      catCtx.beginPath();
+      catCtx.arc(cx - 19, 39, 3.2, 0, Math.PI * 2);
+      catCtx.arc(cx + 19, 39, 3.2, 0, Math.PI * 2);
+      catCtx.fill();
+      catCtx.strokeStyle = "rgba(92,66,55,0.65)";
+      catCtx.lineWidth = 1.4;
+      catCtx.beginPath();
+      catCtx.moveTo(cx, 44);
+      catCtx.quadraticCurveTo(cx - 5, 51, cx - 14, 48);
+      catCtx.moveTo(cx, 44);
+      catCtx.quadraticCurveTo(cx + 5, 51, cx + 14, 48);
+      catCtx.stroke();
+      catCtx.restore();
+    }
+
+    function drawCatPaw(x, y, touch) {
+      catCtx.save();
+      catCtx.fillStyle = "#f2d4b4";
+      catCtx.strokeStyle = "rgba(84, 55, 41, 0.35)";
+      catCtx.lineWidth = 2;
+      catCtx.beginPath();
+      catCtx.ellipse(x, y, 18, 12 + touch * 2, 0, 0, Math.PI * 2);
+      catCtx.fill();
+      catCtx.stroke();
+      catCtx.fillStyle = "rgba(92,66,55,0.35)";
+      for (let i = -1; i <= 1; i += 1) {
+        catCtx.beginPath();
+        catCtx.arc(x + i * 8, y + 2, 2, 0, Math.PI * 2);
+        catCtx.fill();
+      }
+      catCtx.restore();
+    }
+
+    function drawTankPlants(width, height, time) {
+      const sand = tankCtx.createLinearGradient(0, height - 72, 0, height);
+      sand.addColorStop(0, "rgba(217, 191, 120, 0.55)");
+      sand.addColorStop(1, "rgba(193, 151, 76, 0.78)");
+      tankCtx.fillStyle = sand;
+      tankCtx.beginPath();
+      tankCtx.moveTo(0, height - 58);
+      for (let x = 0; x <= width; x += 36) {
+        tankCtx.lineTo(x, height - 58 + Math.sin(time * 0.4 + x * 0.02) * 8);
+      }
+      tankCtx.lineTo(width, height);
+      tankCtx.lineTo(0, height);
+      tankCtx.closePath();
+      tankCtx.fill();
+
+      for (let i = 0; i < 9; i += 1) {
+        const baseX = 24 + i * (width - 48) / 8;
+        const plantHeight = 56 + (i % 4) * 19;
+        tankCtx.strokeStyle = i % 3 === 0 ? "rgba(212, 92, 77, 0.68)" : "rgba(37, 115, 91, 0.64)";
+        tankCtx.lineWidth = 5;
+        tankCtx.beginPath();
+        tankCtx.moveTo(baseX, height - 18);
+        tankCtx.bezierCurveTo(
+          baseX - 18,
+          height - plantHeight * 0.45,
+          baseX + Math.sin(time + i) * 18,
+          height - plantHeight * 0.72,
+          baseX + Math.cos(time * 0.8 + i) * 9,
+          height - plantHeight
+        );
+        tankCtx.stroke();
+      }
+    }
+
+    function drawStoredFish(width, height, time) {
+      [...state.fish]
+        .map((fish, index) => ({ fish, order: index }))
+        .sort((a, b) => getFishDepth(a.fish, a.order) - getFishDepth(b.fish, b.order))
+        .forEach(({ fish, order }) => {
+        const img = getFishImage(fish.src);
+        const pose = getFishPose(fish, order, width, height, time, detectFishFacing(img, fish.facing));
+        const ratio = Math.max(1.1, Math.min(4.2, fish.imageWidth / Math.max(1, fish.imageHeight)));
+        const drawWidth = pose.size;
+        const drawHeight = pose.size / ratio;
+
+        tankCtx.save();
+        tankCtx.translate(pose.x, pose.y);
+        tankCtx.rotate(Math.sin(time * 1.6 + fish.bob) * 0.035);
+        tankCtx.scale(pose.flip, 1);
+        tankCtx.globalAlpha = pose.alpha;
+        tankCtx.filter = pose.depth < 0.34 ? "blur(0.45px)" : "none";
+        tankCtx.shadowColor = "rgba(15, 45, 55, 0.22)";
+        tankCtx.shadowBlur = 4 + pose.depth * 8;
+        tankCtx.shadowOffsetY = 2 + pose.depth * 5;
+        if (img.complete && img.naturalWidth) {
+          tankCtx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+        } else {
+          drawFallbackFish(drawWidth, drawHeight);
+        }
+        tankCtx.restore();
+
+        const labelVisible = pose.x > drawWidth * 0.35 &&
+          pose.x < width - drawWidth * 0.35 &&
+          pose.y > drawHeight * 0.35 &&
+          pose.y < height - drawHeight * 0.15;
+        if (labelVisible) {
+          const label = drawFishLabel(fish, pose.x, pose.y - drawHeight / 2 - 12, pose.depth);
+          hitboxes.push({
+            id: fish.id,
+            action: "like",
+            x: pose.x - drawWidth / 2,
+            y: pose.y - drawHeight / 2 - 34,
+            width: drawWidth,
+            height: drawHeight + 42,
+            centerX: pose.x,
+            centerY: pose.y
+          });
+          if (label.deleteBox) {
+            hitboxes.push({ id: fish.id, action: "delete", ...label.deleteBox });
+          }
+        }
+      });
+    }
+
+    function getFishPose(fish, order, width, height, time, detectedFacing = 1) {
+      const speed = Math.abs(fish.speed);
+      const moveDir = fish.swimDirection === -1 ? -1 : 1;
+      const travel = (fish.x + time * speed) % 1;
+      const x = moveDir > 0 ? travel * (width + 170) - 85 : width + 85 - travel * (width + 170);
+      const depth = getFishDepth(fish, order);
+      const waterTop = getWaterTop(height);
+      const targetY = waterTop + 20 + fish.y * (height - waterTop - 110) + depth * 20 + Math.sin(time * 1.3 + fish.bob) * (7 + depth * 8);
+      const drop = dropAnimations.get(fish.id);
+      let y = targetY;
+      if (drop) {
+        const progress = Math.min(1, (performance.now() - drop.started) / drop.duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        y = -70 + (targetY + 70) * eased + Math.sin(progress * Math.PI * 2) * 8 * (1 - progress);
+        if (progress >= 1) dropAnimations.delete(fish.id);
+      }
+      return {
+        x,
+        y,
+        flip: moveDir === detectedFacing ? 1 : -1,
+        depth,
+        alpha: 0.64 + depth * 0.36,
+        size: fish.size * (0.82 + depth * 0.28)
+      };
+    }
+
+    function getFishDepth(fish, order = 0) {
+      if (Number.isFinite(fish.depth)) return Math.max(0.18, Math.min(0.96, fish.depth));
+      return [0.22, 0.78, 0.38, 0.92, 0.28, 0.68, 0.48][order % 7];
+    }
+
+    function drawFallbackFish(width, height) {
+      tankCtx.fillStyle = "rgba(255,255,255,0.68)";
+      tankCtx.beginPath();
+      tankCtx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
+      tankCtx.fill();
+      tankCtx.beginPath();
+      tankCtx.moveTo(-width / 2, 0);
+      tankCtx.lineTo(-width / 2 - 22, -height / 2);
+      tankCtx.lineTo(-width / 2 - 22, height / 2);
+      tankCtx.closePath();
+      tankCtx.fill();
+    }
+
+    function drawFishLabel(fish, x, y, depth = 0.6) {
+      const heartText = `  ♥ ${fish.hearts}`;
+      const deletable = canDeleteFish(fish);
+      tankCtx.save();
+      tankCtx.font = "400 16px 'Ma Shan Zheng', STXingkai, 华文行楷, KaiTi, 楷体, cursive";
+      const nameWidth = tankCtx.measureText(fish.name).width;
+      const heartWidth = tankCtx.measureText(heartText).width;
+      const textWidth = nameWidth + heartWidth;
+      const labelWidth = Math.min(210, textWidth + 18 + (deletable ? 23 : 0));
+      const labelX = Math.max(8, Math.min(x - labelWidth / 2, els.tankCanvas.getBoundingClientRect().width - labelWidth - 8));
+      const labelY = Math.max(10, y - 22);
+      roundedRect(tankCtx, labelX, labelY, labelWidth, 24, 6);
+      tankCtx.globalAlpha = 0.72 + depth * 0.28;
+      tankCtx.fillStyle = "rgba(255,255,255,0.82)";
+      tankCtx.fill();
+      const availableWidth = labelWidth - 12 - (deletable ? 23 : 0);
+      const textScale = Math.min(1, availableWidth / Math.max(1, textWidth));
+      const textStart = labelX + (labelWidth - (deletable ? 23 : 0) - textWidth * textScale) / 2;
+      tankCtx.save();
+      tankCtx.translate(textStart, labelY + 12);
+      tankCtx.scale(textScale, 1);
+      tankCtx.textAlign = "left";
+      tankCtx.textBaseline = "middle";
+      tankCtx.fillStyle = fish.id === leaderFishId ? "#d29a13" : "#1d3a40";
+      if (fish.id === leaderFishId) {
+        tankCtx.shadowColor = "rgba(210, 154, 19, 0.28)";
+        tankCtx.shadowBlur = 2;
+      }
+      tankCtx.fillText(fish.name, 0, 0);
+      tankCtx.shadowColor = "transparent";
+      tankCtx.shadowBlur = 0;
+      tankCtx.fillStyle = "#1d3a40";
+      tankCtx.fillText(heartText, nameWidth, 0);
+      tankCtx.restore();
+      let deleteBox = null;
+      if (deletable) {
+        const deleteX = labelX + labelWidth - 22;
+        tankCtx.fillStyle = "#c63d3d";
+        tankCtx.font = "400 19px 'Ma Shan Zheng', STXingkai, 华文行楷, KaiTi, 楷体, cursive";
+        tankCtx.textAlign = "center";
+        tankCtx.textBaseline = "middle";
+        tankCtx.fillText("×", deleteX + 10, labelY + 12);
+        deleteBox = { x: deleteX, y: labelY, width: 22, height: 24 };
+      }
+      tankCtx.restore();
+      return { deleteBox };
+    }
+
+    function drawForeground(width, height, time) {
+      const waterTop = getWaterTop(height);
+      tankCtx.strokeStyle = "rgba(255,255,255,0.62)";
+      tankCtx.lineWidth = 10;
+      tankCtx.strokeRect(5, waterTop, width - 10, height - waterTop - 5);
+      tankCtx.strokeStyle = "rgba(23, 32, 29, 0.22)";
+      tankCtx.lineWidth = 2;
+      tankCtx.strokeRect(12, waterTop + 7, width - 24, height - waterTop - 19);
+      tankCtx.strokeStyle = "rgba(255,255,255,0.82)";
+      tankCtx.lineWidth = 6;
+      tankCtx.beginPath();
+      tankCtx.moveTo(6, waterTop);
+      tankCtx.lineTo(width - 6, waterTop);
+      tankCtx.stroke();
+    }
+
+    function drawLikeBurst(burst, now) {
+      const age = Math.min(1, (now - burst.started) / 720);
+      tankCtx.save();
+      tankCtx.globalAlpha = 1 - age;
+      tankCtx.fillStyle = "#d63f61";
+      tankCtx.font = "400 30px 'Ma Shan Zheng', STXingkai, 华文行楷, KaiTi, 楷体, cursive";
+      tankCtx.textAlign = "center";
+      tankCtx.fillText("♥", burst.x, burst.y - age * 46);
+      tankCtx.restore();
+    }
+
+    function roundedRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function handleTankClick(event) {
+      const rect = els.tankCanvas.getBoundingClientRect();
+      const point = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+      const target = [...hitboxes].reverse().find((box) =>
+        point.x >= box.x &&
+        point.x <= box.x + box.width &&
+        point.y >= box.y &&
+        point.y <= box.y + box.height
+      );
+      if (!target) return;
+      if (target.action === "delete") {
+        deleteOwnFish(target.id);
+        return;
+      }
+      likeFish(target.id, target.centerX, target.centerY);
+    }
+
+    function canDeleteFish(fish) {
+      if (SHARED_MODE) return fish.canDelete === true && Date.now() - fish.createdAt <= DELETE_WINDOW_MS;
+      return fish.ownerId === clientId && Date.now() - fish.createdAt <= DELETE_WINDOW_MS;
+    }
+
+    function isOwnFish(fish) {
+      return SHARED_MODE ? fish.isMine === true : fish.ownerId === clientId;
+    }
+
+    async function deleteOwnFish(id) {
+      const fish = state.fish.find((item) => item.id === id);
+      if (!fish) return;
+      if (!canDeleteFish(fish)) {
+        showToast("只有自己三分钟内画的鱼可以删除");
+        renderAll();
+        return;
+      }
+      try {
+        if (SHARED_MODE) await apiRequest(`/api/fish/${encodeURIComponent(id)}`, { method: "DELETE" });
+      } catch (error) {
+        showToast(error.message || "删除失败，请稍后重试");
+        await syncSharedState();
+        return;
+      }
+      state.fish = state.fish.filter((item) => item.id !== id);
+      dropAnimations.delete(id);
+      saveState();
+      renderAll();
+      showToast(`${fish.name} 已移出鱼缸`);
+    }
+
+    async function likeFish(id, burstX, burstY) {
+      const fish = state.fish.find((item) => item.id === id);
+      if (!fish) return;
+      try {
+        if (SHARED_MODE) {
+          const response = await apiRequest(`/api/fish/${encodeURIComponent(id)}/like`, { method: "POST" });
+          fish.hearts = response.fish.hearts;
+          fish.canDelete = response.fish.canDelete;
+          fish.isMine = response.fish.isMine;
+        } else {
+          fish.hearts += 1;
+        }
+      } catch (error) {
+        showToast(error.message || "点赞失败，请稍后重试");
+        return;
+      }
+      likeBurst = {
+        x: burstX || els.tankCanvas.getBoundingClientRect().width - 48,
+        y: burstY || 76,
+        started: performance.now()
+      };
+      saveState();
+      renderAll();
+    }
+
+    function getFishImage(src) {
+      if (imageCache.has(src)) return imageCache.get(src);
+      const img = new Image();
+      img.src = src;
+      imageCache.set(src, img);
+      return img;
+    }
+
+    function detectFishFacing(img, fallback = 1) {
+      if (!img.complete || !img.naturalWidth) return fallback === -1 ? -1 : 1;
+      if (imageFacingCache.has(img)) return imageFacingCache.get(img);
+      const sample = document.createElement("canvas");
+      sample.width = 64;
+      sample.height = 36;
+      const context = sample.getContext("2d", { willReadFrequently: true });
+      context.drawImage(img, 0, 0, sample.width, sample.height);
+      const pixels = context.getImageData(0, 0, sample.width, sample.height).data;
+      const spans = Array(sample.width).fill(0);
+      for (let x = 0; x < sample.width; x += 1) {
+        let minY = sample.height;
+        let maxY = -1;
+        for (let y = 0; y < sample.height; y += 1) {
+          if (pixels[(y * sample.width + x) * 4 + 3] > 24) {
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+          }
+        }
+        spans[x] = maxY >= minY ? maxY - minY + 1 : 0;
+      }
+      const average = (from, to) => spans.slice(from, to).reduce((sum, value) => sum + value, 0) / Math.max(1, to - from);
+      const leftFlare = average(0, 10) / Math.max(1, average(11, 19));
+      const rightFlare = average(54, 64) / Math.max(1, average(45, 53));
+      const facing = leftFlare >= rightFlare ? 1 : -1;
+      imageFacingCache.set(img, facing);
+      return facing;
+    }
+
+    function cleanupOldFish() {
+      const cutoff = getEightMonthCutoff();
+      const before = state.fish.length;
+      state.fish = state.fish.filter((fish) => Number(fish.createdAt) >= cutoff);
+      state.lastRemovedCount = before - state.fish.length;
+      state.lastCleanupAt = Date.now();
+      renderAll();
+    }
+
+    function getEightMonthCutoff() {
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - 8);
+      return cutoff.getTime();
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(defaultState),
+          ...parsed,
+          fish: Array.isArray(parsed.fish) ? parsed.fish.map(normalizeFish).filter(Boolean) : []
+        };
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function getClientId() {
+      let id = localStorage.getItem(CLIENT_ID_KEY);
+      if (!id) {
+        id = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        localStorage.setItem(CLIENT_ID_KEY, id);
+      }
+      return id;
+    }
+
+    function normalizeFish(fish) {
+      if (!fish || typeof fish.src !== "string") return null;
+      return {
+        id: fish.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        name: String(fish.name || "未命名").slice(0, 18),
+        src: fish.src,
+        imageWidth: Number(fish.imageWidth) || 180,
+        imageHeight: Number(fish.imageHeight) || 90,
+        createdAt: Number(fish.createdAt) || Date.now(),
+        hearts: Math.max(0, Number(fish.hearts) || 0),
+        x: Number.isFinite(fish.x) ? fish.x : Math.random(),
+        y: Number.isFinite(fish.y) ? fish.y : 0.18 + Math.random() * 0.58,
+        speed: Number.isFinite(fish.speed) && fish.speed !== 0 ? Math.abs(fish.speed) : 0.02,
+        size: Number.isFinite(fish.size) ? fish.size : 108,
+        depth: Number.isFinite(fish.depth) ? fish.depth : 0.52,
+        facing: fish.orientationVersion === 2 && fish.facing === -1 ? -1 : 1,
+        swimDirection: fish.swimDirection === -1 || fish.swimDirection === 1
+          ? fish.swimDirection
+          : getStableSwimDirection(fish.id || fish.name),
+        orientationVersion: 2,
+        ownerId: typeof fish.ownerId === "string" ? fish.ownerId : "",
+        canDelete: fish.canDelete === true,
+        isMine: fish.isMine === true,
+        bob: Number.isFinite(fish.bob) ? fish.bob : Math.random() * Math.PI * 2
+      };
+    }
+
+    function getStableSwimDirection(value) {
+      const text = String(value || "fish");
+      let hash = 0;
+      for (let index = 0; index < text.length; index += 1) hash = (hash * 31 + text.charCodeAt(index)) | 0;
+      return Math.abs(hash) % 2 === 0 ? 1 : -1;
+    }
+
+    function saveState() {
+      if (SHARED_MODE) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    async function apiRequest(path, options = {}) {
+      const response = await fetch(path, {
+        method: options.method || "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Client-Id": clientId
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(payload.error || "共享鱼缸暂时无法连接");
+        error.status = response.status;
+        throw error;
+      }
+      return payload;
+    }
+
+    function showNameError(message) {
+      els.nameError.textContent = message;
+      els.fishName.setAttribute("aria-invalid", "true");
+      els.fishName.focus();
+      els.fishName.select();
+    }
+
+    function clearNameError() {
+      els.nameError.textContent = "";
+      els.fishName.removeAttribute("aria-invalid");
+    }
+
+    async function syncSharedState(showError = false) {
+      if (!SHARED_MODE || syncInFlight) return;
+      syncInFlight = true;
+      try {
+        const response = await apiRequest("/api/state");
+        state.fish = Array.isArray(response.fish) ? response.fish.map(normalizeFish).filter(Boolean) : [];
+        state.lastCleanupAt = Date.now();
+        renderAll();
+      } catch (error) {
+        if (showError) showToast(error.message || "共享鱼缸暂时无法连接");
+      } finally {
+        syncInFlight = false;
+      }
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => els.toast.classList.remove("show"), 1800);
+    }
+  </script>
+</body>
+</html>
