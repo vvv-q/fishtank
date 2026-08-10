@@ -9,6 +9,9 @@ const HOST = process.env.HOST || "0.0.0.0";
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "fish.json");
 const DELETE_WINDOW_MS = 3 * 60 * 1000;
+const MAX_MESSAGES = 160;
+const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_QUALITY_THRESHOLD = 75;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const PUBLIC_EXTENSIONS = new Set([".html", ".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".ttf", ".woff2", ".txt"]);
 const MIME_TYPES = {
@@ -31,10 +34,33 @@ cleanupExpiredFish();
 function readDatabase() {
   try {
     const parsed = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-    return { fish: Array.isArray(parsed.fish) ? parsed.fish : [] };
+    return {
+      fish: Array.isArray(parsed.fish) ? parsed.fish : [],
+      messages: cleanupMessages(parsed.messages),
+      qualityThreshold: getQualityThreshold(parsed.qualityThreshold)
+    };
   } catch {
-    return { fish: [] };
+    return { fish: [], messages: [], qualityThreshold: DEFAULT_QUALITY_THRESHOLD };
   }
+}
+
+function cleanupMessages(messages) {
+  const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+  return (Array.isArray(messages) ? messages : [])
+    .filter((message) => Number(message.createdAt) >= cutoff && String(message.content || "").trim())
+    .sort((a, b) => Number(a.createdAt) - Number(b.createdAt))
+    .slice(-MAX_MESSAGES);
+}
+
+function getQualityThreshold(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(60, Math.min(95, Math.round(number))) : DEFAULT_QUALITY_THRESHOLD;
+}
+
+function isAdmin(request) {
+  const expected = process.env.ADMIN_PASSWORD;
+  const supplied = String(request.headers["x-admin-password"] || "");
+  return Boolean(expected && supplied && expected === supplied);
 }
 
 function persistDatabase() {
@@ -139,12 +165,48 @@ function normalizeNewFish(input, ownerId) {
   };
 }
 
+function normalizeNewMessage(input) {
+  const name = String(input.name || "").trim().slice(0, 32);
+  const content = String(input.content || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const sessionId = String(input.sessionId || "").slice(0, 120);
+  if (!name || !content || !sessionId) throw Object.assign(new Error("弹幕内容无效"), { status: 400 });
+  return { id: crypto.randomUUID(), name, content, sessionId, createdAt: Date.now() };
+}
+
 async function handleApi(request, response, url) {
   cleanupExpiredFish();
   const clientId = getClientId(request);
 
   if (request.method === "GET" && url.pathname === "/api/state") {
-    sendJson(response, 200, { fish: database.fish.map((fish) => presentFish(fish, clientId)), serverTime: Date.now() });
+    sendJson(response, 200, {
+      fish: database.fish.map((fish) => presentFish(fish, clientId)),
+      messages: database.messages,
+      qualityThreshold: database.qualityThreshold,
+      serverTime: Date.now()
+    });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/admin/verify") {
+    if (!isAdmin(request)) throw Object.assign(new Error("管理员验证失败"), { status: 401 });
+    sendJson(response, 200, { ok: true, qualityThreshold: database.qualityThreshold });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/admin/settings") {
+    if (!isAdmin(request)) throw Object.assign(new Error("管理员验证失败"), { status: 401 });
+    database.qualityThreshold = getQualityThreshold((await readJson(request)).qualityThreshold);
+    persistDatabase();
+    sendJson(response, 200, { qualityThreshold: database.qualityThreshold });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/messages") {
+    const message = normalizeNewMessage(await readJson(request));
+    database.messages.push(message);
+    database.messages = cleanupMessages(database.messages);
+    persistDatabase();
+    sendJson(response, 201, { message });
     return;
   }
 
@@ -171,7 +233,7 @@ async function handleApi(request, response, url) {
     const index = database.fish.findIndex((item) => item.id === match[1]);
     if (index < 0) throw Object.assign(new Error("这条小鱼已经不在鱼缸里了"), { status: 404 });
     const fish = database.fish[index];
-    if (!clientId || fish.ownerId !== clientId || Date.now() - fish.createdAt > DELETE_WINDOW_MS) {
+    if (!isAdmin(request) && (!clientId || fish.ownerId !== clientId || Date.now() - fish.createdAt > DELETE_WINDOW_MS)) {
       throw Object.assign(new Error("只有自己三分钟内画的鱼可以删除"), { status: 403 });
     }
     database.fish.splice(index, 1);

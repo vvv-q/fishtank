@@ -5,6 +5,9 @@ const DELETE_WINDOW_MS = 3 * 60 * 1000;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const STORE_NAME = "our-sea-fish-tank";
 const STATE_KEY = "state";
+const MAX_MESSAGES = 160;
+const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_QUALITY_THRESHOLD = 75;
 
 function json(statusCode, payload) {
   return {
@@ -22,6 +25,24 @@ function getClientId(event) {
   return String(event.headers["x-client-id"] || event.headers["X-Client-Id"] || "").slice(0, 120);
 }
 
+function getQualityThreshold(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(60, Math.min(95, Math.round(number))) : DEFAULT_QUALITY_THRESHOLD;
+}
+
+function isAdmin(event) {
+  const expected = process.env.ADMIN_PASSWORD;
+  const supplied = String(event.headers["x-admin-password"] || event.headers["X-Admin-Password"] || "");
+  if (!expected || !supplied) return false;
+  const expectedBuffer = Buffer.from(expected);
+  const suppliedBuffer = Buffer.from(supplied);
+  return expectedBuffer.length === suppliedBuffer.length && crypto.timingSafeEqual(expectedBuffer, suppliedBuffer);
+}
+
+function requireAdmin(event) {
+  if (!isAdmin(event)) throw Object.assign(new Error("管理员验证失败"), { status: 401 });
+}
+
 function getEightMonthCutoff() {
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - 8);
@@ -32,6 +53,24 @@ function cleanupExpiredFish(state) {
   const cutoff = getEightMonthCutoff();
   const fish = state.fish.filter((item) => Number(item.createdAt) >= cutoff);
   return { fish, changed: fish.length !== state.fish.length };
+}
+
+function cleanupMessages(messages) {
+  const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+  return (Array.isArray(messages) ? messages : [])
+    .filter((message) => Number(message.createdAt) >= cutoff && String(message.content || "").trim())
+    .sort((a, b) => Number(a.createdAt) - Number(b.createdAt))
+    .slice(-MAX_MESSAGES);
+}
+
+function normalizeNewMessage(input) {
+  const name = String(input.name || "").trim().slice(0, 32);
+  const content = String(input.content || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const sessionId = String(input.sessionId || "").slice(0, 120);
+  if (!name || !content || !sessionId) {
+    throw Object.assign(new Error("弹幕内容无效"), { status: 400 });
+  }
+  return { id: crypto.randomUUID(), name, content, sessionId, createdAt: Date.now() };
 }
 
 function presentFish(fish, clientId) {
@@ -93,18 +132,61 @@ function getRoute(event) {
 exports.handler = async (event) => {
   try {
     connectLambda(event);
-    const store = getStore(STORE_NAME);
+    const store = getStore({ name: STORE_NAME, consistency: "strong" });
     const stored = await store.get(STATE_KEY, { type: "json" });
-    let state = { fish: Array.isArray(stored?.fish) ? stored.fish : [] };
+    let state = {
+      fish: Array.isArray(stored?.fish) ? stored.fish : [],
+      messages: cleanupMessages(stored?.messages),
+      qualityThreshold: getQualityThreshold(stored?.qualityThreshold)
+    };
     const cleaned = cleanupExpiredFish(state);
-    state = { fish: cleaned.fish };
+    const messagesChanged = state.messages.length !== (Array.isArray(stored?.messages) ? stored.messages.length : 0);
+    state = { fish: cleaned.fish, messages: state.messages, qualityThreshold: state.qualityThreshold };
     const clientId = getClientId(event);
     const route = getRoute(event);
 
-    if (cleaned.changed) await store.setJSON(STATE_KEY, state);
+    if (cleaned.changed || messagesChanged) await store.setJSON(STATE_KEY, state);
 
     if (event.httpMethod === "GET" && route === "/state") {
-      return json(200, { fish: state.fish.map((fish) => presentFish(fish, clientId)), serverTime: Date.now() });
+      return json(200, {
+        fish: state.fish.map((fish) => presentFish(fish, clientId)),
+        messages: state.messages,
+        qualityThreshold: state.qualityThreshold,
+        serverTime: Date.now()
+      });
+    }
+
+    if (event.httpMethod === "POST" && route === "/admin/verify") {
+      requireAdmin(event);
+      return json(200, { ok: true, qualityThreshold: state.qualityThreshold });
+    }
+
+    if (event.httpMethod === "POST" && route === "/admin/settings") {
+      requireAdmin(event);
+      let input;
+      try {
+        input = JSON.parse(event.body || "{}");
+      } catch {
+        return json(400, { error: "设置格式无效" });
+      }
+      state.qualityThreshold = getQualityThreshold(input.qualityThreshold);
+      await store.setJSON(STATE_KEY, state);
+      return json(200, { qualityThreshold: state.qualityThreshold });
+    }
+
+    if (event.httpMethod === "POST" && route === "/messages") {
+      if (Buffer.byteLength(event.body || "", "utf8") > 4096) return json(413, { error: "弹幕内容过长" });
+      let input;
+      try {
+        input = JSON.parse(event.body || "{}");
+      } catch {
+        return json(400, { error: "弹幕格式无效" });
+      }
+      const message = normalizeNewMessage(input);
+      state.messages.push(message);
+      state.messages = cleanupMessages(state.messages);
+      await store.setJSON(STATE_KEY, state);
+      return json(201, { message });
     }
 
     if (event.httpMethod === "POST" && route === "/fish") {
@@ -135,7 +217,7 @@ exports.handler = async (event) => {
       const index = state.fish.findIndex((item) => item.id === id);
       if (index < 0) return json(404, { error: "这条小鱼已经不在鱼缸里了" });
       const fish = state.fish[index];
-      if (!clientId || fish.ownerId !== clientId || Date.now() - fish.createdAt > DELETE_WINDOW_MS) {
+      if (!isAdmin(event) && (!clientId || fish.ownerId !== clientId || Date.now() - fish.createdAt > DELETE_WINDOW_MS)) {
         return json(403, { error: "只有自己三分钟内画的鱼可以删除" });
       }
       state.fish.splice(index, 1);
