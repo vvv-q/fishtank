@@ -6,6 +6,9 @@ const STORE_NAME = "our-sea-fish-tank";
 const STATE_KEY = "state";
 const MAX_MESSAGES = 100;
 const DEFAULT_QUALITY_THRESHOLD = 75;
+const ACCOUNT_RENAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_DAILY_LIKES_PER_FISH = 50;
+const DAILY_FOOD_REWARD = 15;
 
 function json(statusCode, payload) {
   return {
@@ -80,6 +83,27 @@ function cleanupMessages(messages) {
     .slice(-MAX_MESSAGES);
 }
 
+function getTodayKey() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
+}
+
+function cleanupLikeLimits(likeLimits) {
+  const today = getTodayKey();
+  return Object.fromEntries(Object.entries(likeLimits || {}).filter(([key, value]) => (
+    key.startsWith(`${today}|`) && Number(value) > 0
+  )));
+}
+
+function presentAccount(account) {
+  if (!account) return null;
+  return {
+    username: account.username,
+    food: Math.max(0, Number(account.food) || 0),
+    lastFoodClaimDay: account.lastFoodClaimDay || "",
+    lastRenamedAt: Number(account.lastRenamedAt) || 0
+  };
+}
+
 function normalizeNewMessage(input) {
   const name = String(input.name || "").trim().slice(0, 32);
   const content = String(input.content || "").trim().replace(/\s+/g, " ").slice(0, 30);
@@ -123,6 +147,7 @@ function normalizeNewFish(input, ownerId, state) {
     imageHeight: clamp(input.imageHeight, 1, 900, 90),
     createdAt: Date.now(),
     hearts: 0,
+    food: 0,
     x: clamp(input.x, 0, 1, Math.random()),
     y: clamp(input.y, 0.12, 0.78, 0.45),
     speed: clamp(Math.abs(input.speed), 0.008, 0.08, 0.025),
@@ -157,21 +182,24 @@ exports.handler = async (event) => {
       fish: Array.isArray(stored?.fish) ? stored.fish : [],
       messages: cleanupMessages(stored?.messages),
       accounts: Array.isArray(stored?.accounts) ? stored.accounts : [],
+      likeLimits: cleanupLikeLimits(stored?.likeLimits),
       qualityThreshold: getQualityThreshold(stored?.qualityThreshold)
     };
     const cleaned = cleanupExpiredFish(state);
     const messagesChanged = state.messages.length !== (Array.isArray(stored?.messages) ? stored.messages.length : 0);
     state.fish = cleaned.fish.map((fish) => fish.ownerAccount ? fish : { ...fish, ownerId: "管理员", ownerAccount: "管理员" });
-    state = { fish: state.fish, messages: state.messages, accounts: state.accounts, qualityThreshold: state.qualityThreshold };
+    state = { fish: state.fish, messages: state.messages, accounts: state.accounts, likeLimits: state.likeLimits, qualityThreshold: state.qualityThreshold };
     const clientId = getClientId(event);
     const route = getRoute(event);
 
     if (cleaned.changed || messagesChanged) await store.setJSON(STATE_KEY, state);
 
     if (event.httpMethod === "GET" && route === "/state") {
+      const account = getAccount(event, state);
       return json(200, {
-        fish: state.fish.map((fish) => presentFish(fish, clientId, getAccount(event, state))),
+        fish: state.fish.map((fish) => presentFish(fish, clientId, account)),
         messages: state.messages,
+        account: presentAccount(account),
         qualityThreshold: state.qualityThreshold,
         serverTime: Date.now()
       });
@@ -242,6 +270,11 @@ exports.handler = async (event) => {
       } catch {
         return json(400, { error: "弹幕格式无效" });
       }
+      const account = getAccount(event, state);
+      if (!account && !isAdmin(event)) {
+        return json(401, { error: "请先登录后再发送弹幕" });
+      }
+      input.name = isAdmin(event) ? "管理员-v" : account.username;
       const message = normalizeNewMessage(input);
       state.messages.push(message);
       state.messages = cleanupMessages(state.messages);
@@ -254,8 +287,10 @@ exports.handler = async (event) => {
       const username = String(input.username || "").trim().slice(0, 18);
       const password = String(input.password || "");
       if (!/^[\w\u4e00-\u9fa5]{2,18}$/.test(username) || password.length < 6) return json(400, { error: "用户名为 2-18 位，密码至少 6 位" });
-      if (state.accounts.some((item) => item.username === username)) return json(409, { error: "该账号已注册" });
-      state.accounts.push({ username, salt: crypto.randomBytes(16).toString("hex"), hash: "" });
+      if (state.accounts.some((item) => item.username === username)) {
+        return json(409, { error: `已经有叫${username}的账户了哦，请换一个名字` });
+      }
+      state.accounts.push({ username, salt: crypto.randomBytes(16).toString("hex"), hash: "", lastRenamedAt: 0, food: 0, lastFoodClaimDay: "" });
       state.accounts.at(-1).hash = crypto.scryptSync(password, state.accounts.at(-1).salt, 64).toString("hex");
       await store.setJSON(STATE_KEY, state);
       return json(201, { username });
@@ -263,7 +298,38 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "POST" && route === "/auth/login") {
       const account = requireAccount(event, state);
-      return json(200, { username: account.username });
+      return json(200, presentAccount(account));
+    }
+
+    if (event.httpMethod === "POST" && route === "/auth/rename") {
+      let input;
+      try {
+        input = JSON.parse(event.body || "{}");
+      } catch {
+        return json(400, { error: "账户名格式无效" });
+      }
+      const account = requireAccount(event, state);
+      const username = String(input.username || "").trim().slice(0, 18);
+      if (!/^[\w\u4e00-\u9fa5]{2,18}$/.test(username)) {
+        return json(400, { error: "账户名为 2-18 位" });
+      }
+      if (username === account.username) return json(200, { username, lastRenamedAt: Number(account.lastRenamedAt) || 0 });
+      if (state.accounts.some((item) => item.username === username)) {
+        return json(409, { error: `已经有叫${username}的账户了哦，请换一个名字` });
+      }
+      const now = Date.now();
+      const lastRenamedAt = Number(account.lastRenamedAt) || 0;
+      if (lastRenamedAt && now - lastRenamedAt < ACCOUNT_RENAME_COOLDOWN_MS) {
+        return json(429, { error: "账户名每周只能修改一次" });
+      }
+      const oldUsername = account.username;
+      account.username = username;
+      account.lastRenamedAt = now;
+      state.fish = state.fish.map((fish) => fish.ownerId === oldUsername
+        ? { ...fish, ownerId: username, ownerAccount: username }
+        : fish);
+      await store.setJSON(STATE_KEY, state);
+      return json(200, { username, lastRenamedAt: now });
     }
 
     if (event.httpMethod === "POST" && route === "/fish") {
@@ -282,17 +348,47 @@ exports.handler = async (event) => {
       return json(201, { fish: presentFish(fish, clientId, account) });
     }
 
-    const match = route.match(/^\/fish\/([^/]+)(?:\/(like))?$/);
+    if (event.httpMethod === "POST" && route === "/food/claim") {
+      const account = requireAccount(event, state);
+      const today = getTodayKey();
+      if (account.lastFoodClaimDay === today) {
+        return json(429, { error: "今天已经领取过鱼粮了" });
+      }
+      account.food = Math.max(0, Number(account.food) || 0) + DAILY_FOOD_REWARD;
+      account.lastFoodClaimDay = today;
+      await store.setJSON(STATE_KEY, state);
+      return json(200, presentAccount(account));
+    }
+
+    const match = route.match(/^\/fish\/([^/]+)(?:\/(like|feed))?$/);
     if (match && event.httpMethod === "POST" && match[2] === "like") {
       const fish = state.fish.find((item) => item.id === decodeURIComponent(match[1]));
       if (!fish) return json(404, { error: "这条小鱼已经不在鱼缸里了" });
-      const account = getAccount(event, state);
-      if (account && fish.ownerId === account.username) {
+      const account = requireAccount(event, state);
+      if (fish.ownerId === account.username) {
         return json(403, { error: "\u4e0d\u80fd\u7ed9\u81ea\u5df1\u7684\u9c7c\u70b9\u8d5e\u54e6" });
       }
+      const likeKey = `${getTodayKey()}|${account.username}|${fish.id}`;
+      const likesToday = Math.max(0, Number(state.likeLimits[likeKey]) || 0);
+      if (likesToday >= MAX_DAILY_LIKES_PER_FISH) {
+        return json(429, { error: "今天给这条鱼的点赞次数已达到 50 次" });
+      }
+      state.likeLimits[likeKey] = likesToday + 1;
       fish.hearts = Math.max(0, Number(fish.hearts) || 0) + 1;
       await store.setJSON(STATE_KEY, state);
       return json(200, { fish: presentFish(fish, clientId, account) });
+    }
+
+    if (match && event.httpMethod === "POST" && match[2] === "feed") {
+      const fish = state.fish.find((item) => item.id === decodeURIComponent(match[1]));
+      if (!fish) return json(404, { error: "这条小鱼已经不在鱼缸里了" });
+      const account = requireAccount(event, state);
+      if (fish.ownerId !== account.username) return json(403, { error: "只能喂养自己的鱼苗" });
+      if ((Number(account.food) || 0) < 1) return json(400, { error: "鱼粮不够啦" });
+      account.food -= 1;
+      fish.food = Math.max(0, Number(fish.food) || 0) + 1;
+      await store.setJSON(STATE_KEY, state);
+      return json(200, { fish: presentFish(fish, clientId, account), food: account.food });
     }
 
     if (match && event.httpMethod === "DELETE" && !match[2]) {

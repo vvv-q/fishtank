@@ -11,6 +11,9 @@ const DATA_FILE = path.join(DATA_DIR, "fish.json");
 const MAX_MESSAGES = 100;
 const DEFAULT_QUALITY_THRESHOLD = 75;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
+const ACCOUNT_RENAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_DAILY_LIKES_PER_FISH = 50;
+const DAILY_FOOD_REWARD = 15;
 const PUBLIC_EXTENSIONS = new Set([".html", ".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".ttf", ".woff2", ".txt"]);
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -36,10 +39,11 @@ function readDatabase() {
       fish: Array.isArray(parsed.fish) ? parsed.fish : [],
       messages: cleanupMessages(parsed.messages),
       accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
+      likeLimits: parsed.likeLimits && typeof parsed.likeLimits === "object" ? parsed.likeLimits : {},
       qualityThreshold: getQualityThreshold(parsed.qualityThreshold)
     };
   } catch {
-    return { fish: [], messages: [], accounts: [], qualityThreshold: DEFAULT_QUALITY_THRESHOLD };
+    return { fish: [], messages: [], accounts: [], likeLimits: {}, qualityThreshold: DEFAULT_QUALITY_THRESHOLD };
   }
 }
 
@@ -48,6 +52,19 @@ function cleanupMessages(messages) {
     .filter((message) => String(message.content || "").trim())
     .sort((a, b) => Number(a.createdAt) - Number(b.createdAt))
     .slice(-MAX_MESSAGES);
+}
+
+function getTodayKey() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
+}
+
+function presentAccount(account) {
+  return account ? {
+    username: account.username,
+    food: Math.max(0, Number(account.food) || 0),
+    lastFoodClaimDay: account.lastFoodClaimDay || "",
+    lastRenamedAt: Number(account.lastRenamedAt) || 0
+  } : null;
 }
 
 function getQualityThreshold(value) {
@@ -169,6 +186,7 @@ function normalizeNewFish(input, ownerId) {
     imageHeight: clamp(input.imageHeight, 1, 900, 90),
     createdAt: Date.now(),
     hearts: 0,
+    food: 0,
     x: clamp(input.x, 0, 1, Math.random()),
     y: clamp(input.y, 0.12, 0.78, 0.45),
     speed: clamp(Math.abs(input.speed), 0.008, 0.08, 0.025),
@@ -199,6 +217,7 @@ async function handleApi(request, response, url) {
     sendJson(response, 200, {
       fish: database.fish.map((fish) => presentFish(fish, clientId, account)),
       messages: database.messages,
+      account: presentAccount(account),
       qualityThreshold: database.qualityThreshold,
       serverTime: Date.now()
     });
@@ -252,7 +271,11 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/messages") {
-    const message = normalizeNewMessage(await readJson(request));
+    const input = await readJson(request);
+    const account = getAccount(request);
+    if (!account && !isAdmin(request)) throw Object.assign(new Error("请先登录后再发送弹幕"), { status: 401 });
+    input.name = isAdmin(request) ? "管理员-v" : account.username;
+    const message = normalizeNewMessage(input);
     database.messages.push(message);
     database.messages = cleanupMessages(database.messages);
     persistDatabase();
@@ -268,10 +291,10 @@ async function handleApi(request, response, url) {
       throw Object.assign(new Error("用户名为 2-18 位，密码至少 6 位"), { status: 400 });
     }
     if (database.accounts.some((item) => item.username === username)) {
-      throw Object.assign(new Error("该账号已注册"), { status: 409 });
+      throw Object.assign(new Error(`已经有叫${username}的账户了哦，请换一个名字`), { status: 409 });
     }
     const salt = crypto.randomBytes(16).toString("hex");
-    database.accounts.push({ username, salt, hash: crypto.scryptSync(password, salt, 64).toString("hex") });
+    database.accounts.push({ username, salt, hash: crypto.scryptSync(password, salt, 64).toString("hex"), lastRenamedAt: 0, food: 0, lastFoodClaimDay: "" });
     persistDatabase();
     sendJson(response, 201, { username });
     return;
@@ -279,7 +302,36 @@ async function handleApi(request, response, url) {
 
   if (request.method === "POST" && url.pathname === "/api/auth/login") {
     const account = requireAccount(request);
-    sendJson(response, 200, { username: account.username });
+    sendJson(response, 200, presentAccount(account));
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/auth/rename") {
+    const input = await readJson(request);
+    const account = requireAccount(request);
+    const username = String(input.username || "").trim().slice(0, 18);
+    if (!/^[\w\u4e00-\u9fa5]{2,18}$/.test(username)) {
+      throw Object.assign(new Error("账户名为 2-18 位"), { status: 400 });
+    }
+    if (username === account.username) {
+      sendJson(response, 200, { username, lastRenamedAt: Number(account.lastRenamedAt) || 0 });
+      return;
+    }
+    if (database.accounts.some((item) => item.username === username)) {
+      throw Object.assign(new Error(`已经有叫${username}的账户了哦，请换一个名字`), { status: 409 });
+    }
+    const now = Date.now();
+    if (account.lastRenamedAt && now - Number(account.lastRenamedAt) < ACCOUNT_RENAME_COOLDOWN_MS) {
+      throw Object.assign(new Error("账户名每周只能修改一次"), { status: 429 });
+    }
+    const oldUsername = account.username;
+    account.username = username;
+    account.lastRenamedAt = now;
+    database.fish = database.fish.map((fish) => fish.ownerId === oldUsername
+      ? { ...fish, ownerId: username, ownerAccount: username }
+      : fish);
+    persistDatabase();
+    sendJson(response, 200, { username, lastRenamedAt: now });
     return;
   }
 
@@ -294,17 +346,47 @@ async function handleApi(request, response, url) {
     return;
   }
 
-  const match = url.pathname.match(/^\/api\/fish\/([^/]+)(?:\/(like))?$/);
+  if (request.method === "POST" && url.pathname === "/api/food/claim") {
+    const account = requireAccount(request);
+    const today = getTodayKey();
+    if (account.lastFoodClaimDay === today) throw Object.assign(new Error("今天已经领取过鱼粮了"), { status: 429 });
+    account.food = Math.max(0, Number(account.food) || 0) + DAILY_FOOD_REWARD;
+    account.lastFoodClaimDay = today;
+    persistDatabase();
+    sendJson(response, 200, presentAccount(account));
+    return;
+  }
+
+  const match = url.pathname.match(/^\/api\/fish\/([^/]+)(?:\/(like|feed))?$/);
   if (match && request.method === "POST" && match[2] === "like") {
     const fish = database.fish.find((item) => item.id === match[1]);
     if (!fish) throw Object.assign(new Error("这条小鱼已经不在鱼缸里了"), { status: 404 });
-    const account = getAccount(request);
-    if (account && fish.ownerId === account.username) {
+    const account = requireAccount(request);
+    if (fish.ownerId === account.username) {
       throw Object.assign(new Error("\u4e0d\u80fd\u7ed9\u81ea\u5df1\u7684\u9c7c\u70b9\u8d5e\u54e6"), { status: 403 });
     }
+    const likeKey = `${getTodayKey()}|${account.username}|${fish.id}`;
+    const likesToday = Math.max(0, Number(database.likeLimits[likeKey]) || 0);
+    if (likesToday >= MAX_DAILY_LIKES_PER_FISH) {
+      throw Object.assign(new Error("今天给这条鱼的点赞次数已达到 50 次"), { status: 429 });
+    }
+    database.likeLimits[likeKey] = likesToday + 1;
     fish.hearts = Math.max(0, Number(fish.hearts) || 0) + 1;
     persistDatabase();
     sendJson(response, 200, { fish: presentFish(fish, clientId, account) });
+    return;
+  }
+
+  if (match && request.method === "POST" && match[2] === "feed") {
+    const fish = database.fish.find((item) => item.id === match[1]);
+    if (!fish) throw Object.assign(new Error("这条小鱼已经不在鱼缸里了"), { status: 404 });
+    const account = requireAccount(request);
+    if (fish.ownerId !== account.username) throw Object.assign(new Error("只能喂养自己的鱼苗"), { status: 403 });
+    if ((Number(account.food) || 0) < 1) throw Object.assign(new Error("鱼粮不够啦"), { status: 400 });
+    account.food -= 1;
+    fish.food = Math.max(0, Number(fish.food) || 0) + 1;
+    persistDatabase();
+    sendJson(response, 200, { fish: presentFish(fish, clientId, account), food: account.food });
     return;
   }
 

@@ -956,7 +956,7 @@
       width: min(520px, calc(100vw - 32px));
       max-height: min(620px, calc(100vh - 32px));
       display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto minmax(0, 1fr);
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.8);
       border-radius: var(--radius);
@@ -988,6 +988,73 @@
       background: #f7fbf9;
       color: #60716b;
       font-size: 13px;
+    }
+
+    .my-fish-summary:empty {
+      display: none;
+    }
+
+    .account-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f7fbf9;
+    }
+
+    .account-name {
+      overflow: hidden;
+      color: #1d3a40;
+      font-size: 18px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .account-food {
+      color: #b26724;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .my-fish-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .feed-btn {
+      min-width: 52px;
+      min-height: 30px;
+      padding: 4px 8px;
+      border-color: rgba(189, 128, 46, 0.45);
+      background: #fff8e8;
+      color: #9b621f;
+    }
+
+    .shop-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 18px 14px;
+      padding: 9px;
+      border: 1px solid #e5b55c;
+      border-radius: var(--radius);
+      background: #fff6d9;
+      color: #965d1b;
+      font-size: 16px;
+    }
+
+    .account-edit-btn {
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      padding: 0;
+      font-size: 18px;
+      line-height: 1;
     }
 
     .my-fish-list {
@@ -1232,12 +1299,22 @@
 
     .rank-thumb {
       display: block;
-      width: 36px;
-      height: 24px;
-      justify-self: center;
-      align-self: center;
+      max-width: 36px;
+      max-height: 24px;
+      width: auto;
+      height: auto;
       object-fit: contain;
       object-position: center center;
+    }
+
+    .rank-thumb-frame {
+      width: 36px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      justify-self: center;
+      align-self: center;
+      overflow: hidden;
       border: 1px solid var(--line);
       border-radius: 5px;
       background: #f8fbfa;
@@ -1271,6 +1348,28 @@
       display: flex;
       align-items: center;
       gap: 2px;
+    }
+
+    .rank-tooltip {
+      position: fixed;
+      z-index: 15;
+      width: max-content;
+      max-width: 190px;
+      display: grid;
+      gap: 3px;
+      padding: 8px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 10px 24px rgba(20, 33, 34, 0.18);
+      color: #263530;
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .rank-tooltip strong {
+      color: #1d3a40;
+      font-size: 14px;
     }
 
     .delete-btn {
@@ -1425,8 +1524,9 @@
       </div>
       <div class="status-strip" aria-label="鱼缸统计">
         <button class="primary-action" id="newFishBtn" type="button">添加鱼苗</button>
+        <button class="my-fish-action" id="shopBtn" type="button">商店</button>
         <button class="my-fish-action" id="loginBtn" type="button">登录</button>
-        <button class="my-fish-action" id="myFishBtn" type="button">我的鱼苗</button>
+        <button class="my-fish-action" id="myFishBtn" type="button">我的</button>
         <button class="icon-btn admin-entry" id="adminBtn" type="button" title="管理员登录" aria-label="管理员登录"><span aria-hidden="true">☀</span></button>
         <div class="status-item">
           <span>鱼</span>
@@ -1510,21 +1610,36 @@
         <p>画出你想要的小鱼，提交质检达到 75% 后，就可以为它取名并放入鱼缸。</p>
         <p>你可以通过点击鱼缸里的小鱼给别人的小鱼送上爱心❤</p>
         <p>八个月前加入的小鱼会被系统自动放生哦~</p>
+        <p>鱼苗会成长为小鱼和成鱼；天数、爱心和鱼粮都能帮助它更快成长，成鱼会获得一枚小徽章。</p>
         <p class="intro-reminder">！！需要先登录账号再进行操作</p>
-        <p class="intro-reminder">“我的鱼苗”中可以选择放生自己的鱼。</p>
+        <p class="intro-reminder">“我的”中可以选择放生自己的鱼。</p>
       </div>
       <button class="submit-btn intro-action" id="closeIntroBtn" type="button">我知道了</button>
     </div>
   </section>
 
-  <section class="modal-layer" id="myFishModal" aria-label="我的鱼苗" aria-modal="true" role="dialog">
+  <section class="modal-layer" id="myFishModal" aria-label="我的" aria-modal="true" role="dialog">
     <div class="my-fish-dialog">
       <div class="modal-head">
-        <h2>我的鱼苗</h2>
+        <h2>我的</h2>
         <button class="icon-btn" id="closeMyFishBtn" type="button" title="关闭">×</button>
+      </div>
+      <div class="account-summary">
+        <strong class="account-name" id="accountName">未登录</strong>
+        <span class="account-food" id="accountFood">鱼粮 0</span>
+        <button class="icon-btn account-edit-btn" id="editAccountBtn" type="button" title="修改账户名" aria-label="修改账户名">✎</button>
       </div>
       <p class="my-fish-summary" id="myFishSummary"></p>
       <div class="my-fish-list" id="myFishList"></div>
+    </div>
+  </section>
+
+  <section class="modal-layer" id="shopModal" aria-label="商店" aria-modal="true" role="dialog">
+    <div class="exit-dialog">
+      <div class="modal-head"><h2>商店</h2><button class="icon-btn" id="closeShopBtn" type="button" title="关闭">×</button></div>
+      <p class="exit-copy" id="shopFoodText">鱼粮 0 颗</p>
+      <button class="submit-btn intro-action" id="claimFoodBtn" type="button">每日免费领取 15 颗鱼粮</button>
+      <div class="shop-banner"><span aria-hidden="true">📣</span><strong>1元100颗鱼粮</strong></div>
     </div>
   </section>
 
@@ -1654,7 +1769,7 @@
           <div class="form-stack">
             <div class="score-box result-box" id="resultBox">
               <div class="score-line">
-                <span>海洋生物相似度</span>
+                <span>质检结果</span>
                 <strong id="scoreText">0%</strong>
               </div>
               <div class="meter" aria-label="像鱼相似度">
@@ -1676,10 +1791,12 @@
     </div>
   </section>
 
+  <div class="rank-tooltip" id="rankTooltip" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
     const STORAGE_KEY = "shared-fish-tank-v1";
+    const SHARED_STATE_CACHE_KEY = "shared-fish-tank-public-cache-v1";
     const CLIENT_ID_KEY = "shared-fish-tank-client-id";
     const DRAFTS_KEY = "shared-fish-tank-drafts-v2";
     const LEGACY_DRAFT_KEY = "shared-fish-tank-draft-v1";
@@ -1697,7 +1814,6 @@
     };
     const clientId = getClientId();
     const danmakuSessionId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const danmakuName = getRandomDanmakuName();
 
     const els = {
       tankCanvas: document.getElementById("tankCanvas"),
@@ -1720,6 +1836,11 @@
       resultLayer: document.getElementById("resultLayer"),
       closeResultBtn: document.getElementById("closeResultBtn"),
       newFishBtn: document.getElementById("newFishBtn"),
+      shopBtn: document.getElementById("shopBtn"),
+      shopModal: document.getElementById("shopModal"),
+      closeShopBtn: document.getElementById("closeShopBtn"),
+      claimFoodBtn: document.getElementById("claimFoodBtn"),
+      shopFoodText: document.getElementById("shopFoodText"),
       loginBtn: document.getElementById("loginBtn"),
       authModal: document.getElementById("authModal"),
       closeAuthBtn: document.getElementById("closeAuthBtn"),
@@ -1730,6 +1851,9 @@
       authSubmitBtn: document.getElementById("authSubmitBtn"),
       authSwitchBtn: document.getElementById("authSwitchBtn"),
       myFishBtn: document.getElementById("myFishBtn"),
+      accountName: document.getElementById("accountName"),
+      accountFood: document.getElementById("accountFood"),
+      editAccountBtn: document.getElementById("editAccountBtn"),
       adminBtn: document.getElementById("adminBtn"),
       adminModal: document.getElementById("adminModal"),
       closeAdminBtn: document.getElementById("closeAdminBtn"),
@@ -1785,6 +1909,7 @@
       sortBtn: document.getElementById("sortBtn"),
       cleanupText: document.getElementById("cleanupText"),
       lastCleanupText: document.getElementById("lastCleanupText"),
+      rankTooltip: document.getElementById("rankTooltip"),
       toast: document.getElementById("toast")
     };
 
@@ -1794,7 +1919,7 @@
     const imageCache = new Map();
     const imageFacingCache = new WeakMap();
 
-    let state = SHARED_MODE ? structuredClone(defaultState) : loadState();
+    let state = SHARED_MODE ? loadSharedStateCache() : loadState();
     let syncInFlight = false;
     let tool = "pen";
     let lineStyle = "smooth";
@@ -1821,6 +1946,7 @@
     let leaderFishId = null;
     let likeBurst = null;
     const pendingLikes = new Map();
+    const pendingFishIds = new Map();
     const localDanmakuIds = new Set();
     let danmakuInitialScrollDone = false;
     let danmakuForceScroll = false;
@@ -1866,11 +1992,15 @@
       window.addEventListener("pointerup", stopDrawing);
       window.addEventListener("pointercancel", stopDrawing);
       els.newFishBtn.addEventListener("click", openFishModal);
+      els.shopBtn.addEventListener("click", openShopModal);
+      els.closeShopBtn.addEventListener("click", () => els.shopModal.classList.remove("open"));
+      els.claimFoodBtn.addEventListener("click", claimDailyFood);
       els.loginBtn.addEventListener("click", openAuthModal);
       els.closeAuthBtn.addEventListener("click", () => els.authModal.classList.remove("open"));
       els.authSwitchBtn.addEventListener("click", () => { authMode = authMode === "login" ? "register" : "login"; renderAuthModal(); });
       els.authSubmitBtn.addEventListener("click", submitAuth);
       els.myFishBtn.addEventListener("click", openMyFishModal);
+      els.editAccountBtn.addEventListener("click", editAccountName);
       els.adminBtn.addEventListener("click", openAdminModal);
       els.closeMyFishBtn.addEventListener("click", closeMyFishModal);
       els.closeAdminBtn.addEventListener("click", closeAdminModal);
@@ -2499,8 +2629,10 @@
         if (SHARED_MODE) {
           const response = await apiRequest("/api/fish", { method: "POST", body: fish });
           fish = normalizeFish(response.fish);
+          pendingFishIds.set(fish.id, Date.now());
         }
         state.fish.push(fish);
+        if (SHARED_MODE) saveSharedStateCache();
         saveState();
       } catch (error) {
         if (error.status === 409 || String(error.message).startsWith("已经有这条叫")) {
@@ -2911,11 +3043,16 @@
 
     async function sendDanmaku(event) {
       event.preventDefault();
+      if (!accountSession && !isAdmin) {
+        showToast("请先登录后再发送弹幕");
+        openAuthModal();
+        return;
+      }
       const content = els.danmakuInput.value.trim().replace(/\s+/g, " ");
       if (!content) return;
       const message = {
         id: `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        name: isAdmin ? "管理员-v" : danmakuName,
+        name: isAdmin ? "管理员-v" : accountSession.username,
         content: content.slice(0, 30),
         sessionId: danmakuSessionId,
         createdAt: Date.now()
@@ -2929,7 +3066,11 @@
       renderDanmaku();
       try {
         if (SHARED_MODE) {
-          const response = await apiRequest("/api/messages", { method: "POST", body: message });
+          const response = await apiRequest("/api/messages", {
+            method: "POST",
+            body: message,
+            adminPassword: isAdmin ? adminPassword : undefined
+          });
           state.messages = (state.messages || []).filter((item) => item.id !== message.id);
           localDanmakuIds.delete(message.id);
           const savedMessage = normalizeMessage(response.message);
@@ -2972,16 +3113,23 @@
       els.authError.textContent = "";
       try {
         const registering = authMode === "register";
+        let account;
         if (registering) {
           await apiRequest("/api/auth/register", { method: "POST", body: { username, password } });
           // Blob reads can briefly lag behind a write. The local session is valid
           // immediately; the retry verifies it once the account record is visible.
-          await loginAccountWithRetry(username, password);
+          account = await loginAccountWithRetry(username, password);
         } else {
-          await loginAccountWithRetry(username, password);
+          account = await loginAccountWithRetry(username, password);
         }
-        accountSession = { username, password };
-        els.loginBtn.textContent = username;
+        accountSession = {
+          username: account.username,
+          password,
+          lastRenamedAt: account.lastRenamedAt || 0,
+          food: Number(account.food) || 0,
+          lastFoodClaimDay: account.lastFoodClaimDay || ""
+        };
+        els.loginBtn.textContent = account.username;
         els.authModal.classList.remove("open");
         showToast(registering ? "注册成功，已登录" : "登录成功");
       } catch (error) {
@@ -3033,6 +3181,11 @@
         adminPanelVerified = true;
         els.editThresholdBtn.hidden = false;
         passScore = Number(response.qualityThreshold) || PASS_SCORE;
+        if (accountSession && response.account) {
+          accountSession.food = Number(response.account.food) || 0;
+          accountSession.lastFoodClaimDay = response.account.lastFoodClaimDay || "";
+          accountSession.lastRenamedAt = Number(response.account.lastRenamedAt) || 0;
+        }
         els.passScoreText.textContent = `${passScore}%`;
         els.adminLoginPanel.hidden = true;
         els.adminPanel.hidden = false;
@@ -3199,11 +3352,45 @@
       els.myFishModal.classList.add("open");
     }
 
+    function openShopModal() {
+      if (!accountSession) {
+        showToast("请先登录后再进入商店");
+        openAuthModal();
+        return;
+      }
+      renderShop();
+      els.shopModal.classList.add("open");
+    }
+
+    function renderShop() {
+      const food = Math.max(0, Number(accountSession?.food) || 0);
+      els.shopFoodText.textContent = `当前鱼粮：${food} 颗`;
+      els.claimFoodBtn.disabled = !accountSession || accountSession.lastFoodClaimDay === getTodayKey();
+      els.claimFoodBtn.textContent = els.claimFoodBtn.disabled ? "今日已领取" : "每日免费领取 15 颗鱼粮";
+    }
+
+    async function claimDailyFood() {
+      if (!accountSession) return;
+      try {
+        const response = await apiRequest("/api/food/claim", { method: "POST", body: {} });
+        accountSession.food = response.food;
+        accountSession.lastFoodClaimDay = response.lastFoodClaimDay;
+        renderShop();
+        renderMyFish();
+        showToast("已领取 15 颗鱼粮");
+      } catch (error) {
+        showToast(error.message || "今日鱼粮领取失败");
+      }
+    }
+
     function closeMyFishModal() {
       els.myFishModal.classList.remove("open");
     }
 
     function renderMyFish() {
+      els.accountName.textContent = accountSession?.username || "未登录";
+      els.accountFood.textContent = `鱼粮 ${Math.max(0, Number(accountSession?.food) || 0)}`;
+      els.editAccountBtn.disabled = !accountSession;
       const owned = state.fish
         .filter((fish) => isOwnFish(fish))
         .sort((a, b) => b.createdAt - a.createdAt);
@@ -3234,21 +3421,69 @@
         name.textContent = fish.name;
         const meta = document.createElement("div");
         meta.className = "my-fish-meta";
-        meta.textContent = `♥ ${fish.hearts}`;
+        meta.textContent = `♥ ${fish.hearts} · ${getFishStage(fish).label}`;
         info.append(name, meta);
 
+        const actions = document.createElement("div");
+        actions.className = "my-fish-actions";
+        const feed = document.createElement("button");
+        feed.className = "feed-btn";
+        feed.type = "button";
+        feed.textContent = "喂养";
+        feed.addEventListener("click", () => feedFish(fish.id));
         const remove = document.createElement("button");
         remove.className = "my-fish-delete";
         remove.type = "button";
         remove.textContent = "放生";
         remove.addEventListener("click", () => deleteOwnFish(fish.id));
 
-        row.append(thumb, info, remove);
+        actions.append(feed, remove);
+        row.append(thumb, info, actions);
         els.myFishList.appendChild(row);
       });
     }
 
+    async function feedFish(id) {
+      if (!accountSession || (Number(accountSession.food) || 0) < 1) {
+        showToast("鱼粮不够啦，去商店每日领取吧");
+        return;
+      }
+      try {
+        const response = await apiRequest(`/api/fish/${encodeURIComponent(id)}/feed`, { method: "POST", body: { amount: 1 } });
+        const updated = normalizeFish(response.fish);
+        state.fish = state.fish.map((fish) => fish.id === id ? updated : fish);
+        accountSession.food = response.food;
+        renderAll();
+        showToast("小鱼吃到鱼粮啦");
+      } catch (error) {
+        showToast(error.message || "喂养失败");
+      }
+    }
+
+    async function editAccountName() {
+      if (!accountSession) {
+        showToast("请先登录后再修改账户名");
+        openAuthModal();
+        return;
+      }
+      const username = window.prompt("请输入新的账户名（每周只能修改一次）", accountSession.username)?.trim();
+      if (!username || username === accountSession.username) return;
+      try {
+        const response = await apiRequest("/api/auth/rename", { method: "POST", body: { username } });
+        accountSession.username = response.username;
+        accountSession.lastRenamedAt = response.lastRenamedAt || Date.now();
+        els.loginBtn.textContent = response.username;
+        state.fish = state.fish.map((fish) => fish.isMine ? { ...fish, ownerName: response.username } : fish);
+        if (SHARED_MODE) saveSharedStateCache();
+        renderAll();
+        showToast("账户名已修改");
+      } catch (error) {
+        showToast(error.message || "账户名修改失败");
+      }
+    }
+
     function renderLeaderboard() {
+      hideRankTooltip();
       els.leaderboard.innerHTML = "";
       const sorted = [...state.fish].sort((a, b) => b.hearts - a.hearts || b.createdAt - a.createdAt).slice(0, 15);
       leaderFishId = sorted[0]?.id || null;
@@ -3268,16 +3503,24 @@
         no.className = "rank-no";
         no.textContent = index + 1;
 
+        const thumbFrame = document.createElement("div");
+        thumbFrame.className = "rank-thumb-frame";
         const thumb = document.createElement("img");
         thumb.className = "rank-thumb";
         thumb.src = fish.src;
         thumb.alt = fish.name;
+        thumbFrame.appendChild(thumb);
 
         const info = document.createElement("div");
         info.className = "rank-info";
         const name = document.createElement("div");
         name.className = "rank-name";
         name.textContent = fish.name;
+        name.tabIndex = 0;
+        name.addEventListener("mouseenter", () => showRankTooltip(fish, thumbFrame));
+        name.addEventListener("mouseleave", hideRankTooltip);
+        name.addEventListener("focus", () => showRankTooltip(fish, thumbFrame));
+        name.addEventListener("blur", hideRankTooltip);
         info.append(name);
 
         const actions = document.createElement("div");
@@ -3302,9 +3545,59 @@
           actions.appendChild(remove);
         }
 
-        row.append(no, thumb, info, actions);
+        row.append(no, thumbFrame, info, actions);
         els.leaderboard.appendChild(row);
       });
+    }
+
+    function showRankTooltip(fish, anchor) {
+      const tooltip = els.rankTooltip;
+      tooltip.replaceChildren();
+      const title = document.createElement("strong");
+      title.textContent = fish.name;
+      const owner = document.createElement("span");
+      owner.textContent = `主人：${fish.ownerName || "管理员"}`;
+      const age = document.createElement("span");
+      age.textContent = `年龄：${formatFishAge(fish.createdAt)}`;
+      tooltip.append(title, owner, age);
+      tooltip.hidden = false;
+      const rect = anchor.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const left = Math.max(8, rect.left - tooltipRect.width - 8);
+      const top = Math.min(window.innerHeight - tooltipRect.height - 8, Math.max(8, rect.top + rect.height / 2 - tooltipRect.height / 2));
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+
+    function hideRankTooltip() {
+      els.rankTooltip.hidden = true;
+    }
+
+    function formatFishAge(createdAt) {
+      const start = new Date(Number(createdAt) || Date.now());
+      const now = new Date();
+      if (start > now) return "0天";
+      let months = (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth();
+      const monthMark = new Date(start);
+      monthMark.setMonth(monthMark.getMonth() + months);
+      if (monthMark > now) {
+        months -= 1;
+        monthMark.setMonth(monthMark.getMonth() - 1);
+      }
+      const days = Math.max(0, Math.floor((now - monthMark) / (24 * 60 * 60 * 1000)));
+      return months > 0 ? `${months}个月${days}天` : `${days}天`;
+    }
+
+    function getTodayKey() {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
+    }
+
+    function getFishStage(fish) {
+      const ageDays = Math.max(0, Math.floor((Date.now() - Number(fish.createdAt || Date.now())) / 86400000));
+      const growth = ageDays * 2 + Math.max(0, Number(fish.hearts) || 0) + Math.max(0, Number(fish.food) || 0) * 3;
+      if (growth >= 150) return { key: "adult", label: "成鱼", growth };
+      if (growth >= 50) return { key: "young", label: "小鱼", growth };
+      return { key: "fry", label: "鱼苗", growth };
     }
 
     function renderMaintenance() {
@@ -3855,10 +4148,12 @@
 
     function drawFishLabel(fish, x, y, depth = 0.6) {
       const heartText = `  ♥ ${fish.hearts}`;
+      const stage = getFishStage(fish);
+      const displayName = stage.key === "adult" ? `★ ${fish.name}` : fish.name;
       const deletable = canDeleteFish(fish);
       tankCtx.save();
       tankCtx.font = "400 16px 'Ma Shan Zheng', STXingkai, 华文行楷, KaiTi, 楷体, cursive";
-      const nameWidth = tankCtx.measureText(fish.name).width;
+      const nameWidth = tankCtx.measureText(displayName).width;
       const heartWidth = tankCtx.measureText(heartText).width;
       const textWidth = nameWidth + heartWidth;
       const labelWidth = Math.min(210, textWidth + 18 + (deletable ? 23 : 0));
@@ -3876,12 +4171,12 @@
       tankCtx.scale(textScale, 1);
       tankCtx.textAlign = "left";
       tankCtx.textBaseline = "middle";
-      tankCtx.fillStyle = fish.id === leaderFishId ? "#d29a13" : "#1d3a40";
+      tankCtx.fillStyle = stage.key === "adult" || fish.id === leaderFishId ? "#d29a13" : "#1d3a40";
       if (fish.id === leaderFishId) {
         tankCtx.shadowColor = "rgba(210, 154, 19, 0.28)";
         tankCtx.shadowBlur = 2;
       }
-      tankCtx.fillText(fish.name, 0, 0);
+      tankCtx.fillText(displayName, 0, 0);
       tankCtx.shadowColor = "transparent";
       tankCtx.shadowBlur = 0;
       tankCtx.fillStyle = "#1d3a40";
@@ -3963,12 +4258,14 @@
     }
 
     function canDeleteFish(fish) {
-      if (SHARED_MODE) return fish.canDelete === true;
+      if (SHARED_MODE) return fish.canDelete === true || Boolean(accountSession && fish.ownerName === accountSession.username);
       return fish.ownerId === clientId;
     }
 
     function isOwnFish(fish) {
-      return SHARED_MODE ? fish.isMine === true : fish.ownerId === clientId;
+      return SHARED_MODE
+        ? fish.isMine === true || Boolean(accountSession && fish.ownerName === accountSession.username)
+        : fish.ownerId === clientId;
     }
 
     async function deleteOwnFish(id) {
@@ -3988,6 +4285,7 @@
       }
       state.fish = state.fish.filter((item) => item.id !== id);
       dropAnimations.delete(id);
+      if (SHARED_MODE) saveSharedStateCache();
       saveState();
       renderAll();
       showToast(`${fish.name} 已放生`);
@@ -3996,6 +4294,11 @@
     async function likeFish(id, burstX, burstY) {
       const fish = state.fish.find((item) => item.id === id);
       if (!fish) return;
+      if (SHARED_MODE && !accountSession) {
+        showToast("请先登录后再点赞");
+        openAuthModal();
+        return;
+      }
       if (isOwnFish(fish)) {
         showToast("不能给自己的鱼点赞哦");
         return;
@@ -4107,6 +4410,40 @@
       }
     }
 
+    function loadSharedStateCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(SHARED_STATE_CACHE_KEY) || "null");
+        if (!cached || !Array.isArray(cached.fish)) return structuredClone(defaultState);
+        return {
+          ...structuredClone(defaultState),
+          fish: cached.fish.map(normalizeFish).filter(Boolean).map((fish) => ({
+            ...fish,
+            // Login is not persisted, so cached ownership must never grant permissions.
+            isMine: false,
+            canDelete: false
+          })),
+          messages: Array.isArray(cached.messages) ? cached.messages.map(normalizeMessage).filter(Boolean) : [],
+          lastCleanupAt: Number(cached.lastCleanupAt) || 0,
+          lastRemovedCount: Number(cached.lastRemovedCount) || 0
+        };
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveSharedStateCache() {
+      try {
+        localStorage.setItem(SHARED_STATE_CACHE_KEY, JSON.stringify({
+          fish: state.fish,
+          messages: state.messages,
+          lastCleanupAt: state.lastCleanupAt,
+          lastRemovedCount: state.lastRemovedCount
+        }));
+      } catch {
+        // Caching is optional and must never interrupt the shared fish tank.
+      }
+    }
+
     function getClientId() {
       let id = localStorage.getItem(CLIENT_ID_KEY);
       if (!id) {
@@ -4152,6 +4489,7 @@
         imageHeight: Number(fish.imageHeight) || 90,
         createdAt: Number(fish.createdAt) || Date.now(),
         hearts: Math.max(0, Number(fish.hearts) || 0),
+        food: Math.max(0, Number(fish.food) || 0),
         x: Number.isFinite(fish.x) ? fish.x : Math.random(),
         y: Number.isFinite(fish.y) ? fish.y : 0.18 + Math.random() * 0.58,
         speed: Number.isFinite(fish.speed) && fish.speed !== 0 ? Math.abs(fish.speed) : 0.02,
@@ -4163,6 +4501,7 @@
           : getStableSwimDirection(fish.id || fish.name),
         orientationVersion: 2,
         ownerId: typeof fish.ownerId === "string" ? fish.ownerId : "",
+        ownerName: String(fish.ownerAccount || fish.ownerName || "管理员").slice(0, 18),
         canDelete: fish.canDelete === true,
         isMine: fish.isMine === true,
         bob: Number.isFinite(fish.bob) ? fish.bob : Math.random() * Math.PI * 2
@@ -4219,12 +4558,25 @@
       syncInFlight = true;
       try {
         const response = await apiRequest("/api/state");
-        state.fish = Array.isArray(response.fish)
+        const remoteFish = Array.isArray(response.fish)
           ? response.fish.map(normalizeFish).filter(Boolean).map((fish) => ({
             ...fish,
             hearts: fish.hearts + (pendingLikes.get(fish.id) || 0)
           }))
           : [];
+        const remoteFishIds = new Set(remoteFish.map((fish) => fish.id));
+        remoteFishIds.forEach((id) => pendingFishIds.delete(id));
+        const now = Date.now();
+        const awaitingFish = (state.fish || []).filter((fish) => {
+          const submittedAt = pendingFishIds.get(fish.id);
+          if (!submittedAt || remoteFishIds.has(fish.id)) return false;
+          if (now - submittedAt > 30_000) {
+            pendingFishIds.delete(fish.id);
+            return false;
+          }
+          return true;
+        });
+        state.fish = [...remoteFish, ...awaitingFish];
         const remoteMessages = Array.isArray(response.messages)
           ? response.messages.map(normalizeMessage).filter(Boolean)
           : [];
@@ -4237,6 +4589,7 @@
         passScore = Number(response.qualityThreshold) || PASS_SCORE;
         els.passScoreText.textContent = `${passScore}%`;
         state.lastCleanupAt = Date.now();
+        saveSharedStateCache();
         renderAll();
       } catch (error) {
         if (showError) showToast(error.message || "共享鱼缸暂时无法连接");
