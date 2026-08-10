@@ -24,6 +24,21 @@ function getClientId(event) {
   return String(event.headers["x-client-id"] || event.headers["X-Client-Id"] || "").slice(0, 120);
 }
 
+function getAccount(event, state) {
+  const username = String(event.headers["x-account-name"] || "").trim();
+  const password = String(event.headers["x-account-password"] || "");
+  const account = (state.accounts || []).find((item) => item.username === username);
+  if (!account || !password) return null;
+  const hash = crypto.scryptSync(password, account.salt, 64).toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(account.hash, "hex")) ? account : null;
+}
+
+function requireAccount(event, state) {
+  const account = getAccount(event, state);
+  if (!account) throw Object.assign(new Error("请先登录后再操作"), { status: 401 });
+  return account;
+}
+
 function getQualityThreshold(value) {
   const number = Number(value);
   return Number.isFinite(number) ? Math.max(60, Math.min(95, Math.round(number))) : DEFAULT_QUALITY_THRESHOLD;
@@ -75,13 +90,13 @@ function normalizeNewMessage(input) {
   return { id: crypto.randomUUID(), name, content, sessionId, createdAt: Date.now() };
 }
 
-function presentFish(fish, clientId) {
+function presentFish(fish, clientId, account) {
   const { ownerId, ...publicFish } = fish;
-  const isMine = Boolean(clientId && ownerId === clientId);
+  const isMine = Boolean((account && ownerId === account.username) || (clientId && ownerId === clientId));
   return {
     ...publicFish,
     isMine,
-    canDelete: Boolean(isMine && Date.now() - fish.createdAt <= DELETE_WINDOW_MS)
+    canDelete: isMine
   };
 }
 
@@ -141,11 +156,13 @@ exports.handler = async (event) => {
     let state = {
       fish: Array.isArray(stored?.fish) ? stored.fish : [],
       messages: cleanupMessages(stored?.messages),
+      accounts: Array.isArray(stored?.accounts) ? stored.accounts : [],
       qualityThreshold: getQualityThreshold(stored?.qualityThreshold)
     };
     const cleaned = cleanupExpiredFish(state);
     const messagesChanged = state.messages.length !== (Array.isArray(stored?.messages) ? stored.messages.length : 0);
-    state = { fish: cleaned.fish, messages: state.messages, qualityThreshold: state.qualityThreshold };
+    state.fish = cleaned.fish.map((fish) => fish.ownerAccount ? fish : { ...fish, ownerId: "管理员", ownerAccount: "管理员" });
+    state = { fish: state.fish, messages: state.messages, accounts: state.accounts, qualityThreshold: state.qualityThreshold };
     const clientId = getClientId(event);
     const route = getRoute(event);
 
@@ -153,7 +170,7 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "GET" && route === "/state") {
       return json(200, {
-        fish: state.fish.map((fish) => presentFish(fish, clientId)),
+        fish: state.fish.map((fish) => presentFish(fish, clientId, getAccount(event, state))),
         messages: state.messages,
         qualityThreshold: state.qualityThreshold,
         serverTime: Date.now()
@@ -232,6 +249,23 @@ exports.handler = async (event) => {
       return json(201, { message });
     }
 
+    if (event.httpMethod === "POST" && route === "/auth/register") {
+      const input = JSON.parse(event.body || "{}");
+      const username = String(input.username || "").trim().slice(0, 18);
+      const password = String(input.password || "");
+      if (!/^[\w\u4e00-\u9fa5]{2,18}$/.test(username) || password.length < 6) return json(400, { error: "用户名为 2-18 位，密码至少 6 位" });
+      if (state.accounts.some((item) => item.username === username)) return json(409, { error: "该账号已注册" });
+      state.accounts.push({ username, salt: crypto.randomBytes(16).toString("hex"), hash: "" });
+      state.accounts.at(-1).hash = crypto.scryptSync(password, state.accounts.at(-1).salt, 64).toString("hex");
+      await store.setJSON(STATE_KEY, state);
+      return json(201, { username });
+    }
+
+    if (event.httpMethod === "POST" && route === "/auth/login") {
+      const account = requireAccount(event, state);
+      return json(200, { username: account.username });
+    }
+
     if (event.httpMethod === "POST" && route === "/fish") {
       if (Buffer.byteLength(event.body || "", "utf8") > MAX_BODY_BYTES) return json(413, { error: "请求数据过大" });
       let input;
@@ -240,10 +274,12 @@ exports.handler = async (event) => {
       } catch {
         return json(400, { error: "请求格式无效" });
       }
-      const fish = normalizeNewFish(input, clientId, state);
+      const account = requireAccount(event, state);
+      const fish = normalizeNewFish(input, account.username, state);
+      fish.ownerAccount = account.username;
       state.fish.push(fish);
       await store.setJSON(STATE_KEY, state);
-      return json(201, { fish: presentFish(fish, clientId) });
+      return json(201, { fish: presentFish(fish, clientId, account) });
     }
 
     const match = route.match(/^\/fish\/([^/]+)(?:\/(like))?$/);
@@ -260,7 +296,8 @@ exports.handler = async (event) => {
       const index = state.fish.findIndex((item) => item.id === id);
       if (index < 0) return json(404, { error: "这条小鱼已经不在鱼缸里了" });
       const fish = state.fish[index];
-      if (!isAdmin(event) && (!clientId || fish.ownerId !== clientId || Date.now() - fish.createdAt > DELETE_WINDOW_MS)) {
+      const account = getAccount(event, state);
+      if (!isAdmin(event) && (!account || fish.ownerId !== account.username)) {
         return json(403, { error: "只有自己三分钟内画的鱼可以删除" });
       }
       state.fish.splice(index, 1);

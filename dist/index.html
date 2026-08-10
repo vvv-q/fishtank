@@ -103,6 +103,7 @@
         rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(12px);
       box-shadow: inset 0 -3px 0 rgba(212, 92, 77, 0.08);
+      overflow: hidden;
     }
 
     h1,
@@ -178,10 +179,12 @@
       justify-content: flex-end;
       align-items: stretch;
       gap: 6px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      min-width: 0;
     }
 
     .status-item {
+      flex: 0 0 auto;
       min-width: 88px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -368,14 +371,14 @@
 
     .clear-danmaku-btn {
       position: absolute;
-      top: 0;
-      right: -49px;
+      top: -28px;
+      right: 0;
     }
 
     .danmaku-batch-btn {
       position: absolute;
-      right: -64px;
-      bottom: 36px;
+      right: 0;
+      bottom: 38px;
     }
 
     .new-messages-btn {
@@ -1422,6 +1425,7 @@
       </div>
       <div class="status-strip" aria-label="鱼缸统计">
         <button class="primary-action" id="newFishBtn" type="button">添加鱼苗</button>
+        <button class="my-fish-action" id="loginBtn" type="button">登录</button>
         <button class="my-fish-action" id="myFishBtn" type="button">我的鱼苗</button>
         <button class="icon-btn admin-entry" id="adminBtn" type="button" title="管理员登录" aria-label="管理员登录"><span aria-hidden="true">☀</span></button>
         <div class="status-item">
@@ -1483,6 +1487,19 @@
       </aside>
     </section>
   </main>
+
+  <section class="modal-layer" id="authModal" aria-label="登录" aria-modal="true" role="dialog">
+    <div class="exit-dialog">
+      <div class="modal-head"><h2 id="authTitle">登录</h2><button class="icon-btn" id="closeAuthBtn" type="button">×</button></div>
+      <div class="form-stack">
+        <div class="field"><label for="authUsername">账号</label><input id="authUsername" maxlength="18" autocomplete="username"></div>
+        <div class="field"><label for="authPassword">密码</label><input id="authPassword" type="password" autocomplete="current-password"></div>
+        <p class="name-error" id="authError"></p>
+        <button class="submit-btn" id="authSubmitBtn" type="button">登录</button>
+        <button class="exit-cancel" id="authSwitchBtn" type="button">没有账号？去注册</button>
+      </div>
+    </div>
+  </section>
 
   <section class="modal-layer intro-layer open" id="introModal" aria-label="使用说明" aria-modal="true" role="dialog">
     <div class="intro-dialog">
@@ -1703,6 +1720,15 @@
       resultLayer: document.getElementById("resultLayer"),
       closeResultBtn: document.getElementById("closeResultBtn"),
       newFishBtn: document.getElementById("newFishBtn"),
+      loginBtn: document.getElementById("loginBtn"),
+      authModal: document.getElementById("authModal"),
+      closeAuthBtn: document.getElementById("closeAuthBtn"),
+      authTitle: document.getElementById("authTitle"),
+      authUsername: document.getElementById("authUsername"),
+      authPassword: document.getElementById("authPassword"),
+      authError: document.getElementById("authError"),
+      authSubmitBtn: document.getElementById("authSubmitBtn"),
+      authSwitchBtn: document.getElementById("authSwitchBtn"),
       myFishBtn: document.getElementById("myFishBtn"),
       adminBtn: document.getElementById("adminBtn"),
       adminModal: document.getElementById("adminModal"),
@@ -1782,6 +1808,9 @@
     let passScore = PASS_SCORE;
     let adminPassword = "";
     let isAdmin = false;
+    let authMode = "login";
+    let accountSession = null;
+    let adminPanelVerified = false;
     const selectedAdminFishIds = new Set();
     const selectedAdminMessageIds = new Set();
     let currentBreakdown = [];
@@ -1836,6 +1865,10 @@
       window.addEventListener("pointerup", stopDrawing);
       window.addEventListener("pointercancel", stopDrawing);
       els.newFishBtn.addEventListener("click", openFishModal);
+      els.loginBtn.addEventListener("click", openAuthModal);
+      els.closeAuthBtn.addEventListener("click", () => els.authModal.classList.remove("open"));
+      els.authSwitchBtn.addEventListener("click", () => { authMode = authMode === "login" ? "register" : "login"; renderAuthModal(); });
+      els.authSubmitBtn.addEventListener("click", submitAuth);
       els.myFishBtn.addEventListener("click", openMyFishModal);
       els.adminBtn.addEventListener("click", openAdminModal);
       els.closeMyFishBtn.addEventListener("click", closeMyFishModal);
@@ -2300,6 +2333,11 @@
     }
 
     function openFishModal() {
+      if (SHARED_MODE && !accountSession) {
+        showToast("请先登录或注册后再添加鱼苗");
+        openAuthModal();
+        return;
+      }
       updateDraftAvailability();
       els.fishModal.classList.add("open");
       requestAnimationFrame(() => updateCanvasStage());
@@ -2732,7 +2770,7 @@
       renderDanmaku();
       renderMaintenance();
       if (els.myFishModal.classList.contains("open")) renderMyFish();
-      if (isAdmin && els.adminModal.classList.contains("open")) renderAdminPanel();
+      if (adminPanelVerified && els.adminModal.classList.contains("open")) renderAdminPanel();
     }
 
     function renderDanmaku() {
@@ -2842,17 +2880,45 @@
       }
     }
 
+    function openAuthModal() {
+      authMode = "login";
+      renderAuthModal();
+      els.authModal.classList.add("open");
+      els.authUsername.focus();
+    }
+
+    function renderAuthModal() {
+      const register = authMode === "register";
+      els.authTitle.textContent = register ? "注册" : "登录";
+      els.authSubmitBtn.textContent = register ? "注册并登录" : "登录";
+      els.authSwitchBtn.textContent = register ? "已有账号？去登录" : "没有账号？去注册";
+      els.authError.textContent = "";
+    }
+
+    async function submitAuth() {
+      const username = els.authUsername.value.trim();
+      const password = els.authPassword.value;
+      try {
+        if (authMode === "register") await apiRequest("/api/auth/register", { method: "POST", body: { username, password } });
+        await apiRequest("/api/auth/login", { method: "POST", body: {}, account: { username, password } });
+        accountSession = { username, password };
+        els.loginBtn.textContent = username;
+        els.authModal.classList.remove("open");
+      } catch (error) { els.authError.textContent = error.message || "登录失败"; }
+    }
+
     function openAdminModal() {
       els.adminError.textContent = "";
       els.adminPassword.value = "";
-      els.adminLoginPanel.hidden = isAdmin;
-      els.adminPanel.hidden = !isAdmin;
-      if (isAdmin) renderAdminPanel();
+      adminPanelVerified = false;
+      els.adminLoginPanel.hidden = false;
+      els.adminPanel.hidden = true;
       els.adminModal.classList.add("open");
-      if (!isAdmin) els.adminPassword.focus();
+      els.adminPassword.focus();
     }
 
     function closeAdminModal() {
+      adminPanelVerified = false;
       els.adminPassword.value = "";
       els.adminModal.classList.remove("open");
     }
@@ -2866,6 +2932,7 @@
         const response = await apiRequest("/api/admin/verify", { method: "POST", adminPassword: password });
         adminPassword = password;
         isAdmin = true;
+        adminPanelVerified = true;
         els.editThresholdBtn.hidden = false;
         passScore = Number(response.qualityThreshold) || PASS_SCORE;
         els.passScoreText.textContent = `${passScore}%`;
@@ -2952,6 +3019,7 @@
     }
 
     async function deleteAdminFish(id) {
+      if (!adminPanelVerified) return;
       try {
         await apiRequest(`/api/fish/${encodeURIComponent(id)}`, { method: "DELETE", adminPassword });
         state.fish = state.fish.filter((fish) => fish.id !== id);
@@ -2973,6 +3041,7 @@
     }
 
     async function deleteSelectedAdminFish() {
+      if (!adminPanelVerified) return;
       const ids = [...selectedAdminFishIds];
       if (!ids.length) {
         showToast("请先选择要删除的鱼苗");
@@ -2992,6 +3061,7 @@
     }
 
     async function clearDanmakuAsAdmin() {
+      if (!adminPanelVerified) return;
       if (!window.confirm("确定清空全部弹幕吗？")) return;
       try {
         await apiRequest("/api/admin/messages", { method: "DELETE", adminPassword });
@@ -3006,6 +3076,7 @@
     }
 
     async function deleteDanmakuMessages(ids) {
+      if (!adminPanelVerified) return;
       if (!ids.length) return;
       try {
         await apiRequest("/api/admin/messages/delete-batch", { method: "POST", adminPassword, body: { ids } });
@@ -3800,8 +3871,8 @@
     }
 
     function canDeleteFish(fish) {
-      if (SHARED_MODE) return fish.canDelete === true && Date.now() - fish.createdAt <= DELETE_WINDOW_MS;
-      return fish.ownerId === clientId && Date.now() - fish.createdAt <= DELETE_WINDOW_MS;
+      if (SHARED_MODE) return fish.canDelete === true;
+      return fish.ownerId === clientId;
     }
 
     function isOwnFish(fish) {
@@ -4015,11 +4086,13 @@
     }
 
     async function apiRequest(path, options = {}) {
+      const credentials = options.account || accountSession;
       const response = await fetch(path, {
         method: options.method || "GET",
         headers: {
           "Content-Type": "application/json",
           "X-Client-Id": clientId,
+          ...(credentials ? { "X-Account-Name": credentials.username, "X-Account-Password": credentials.password } : {}),
           ...(options.adminPassword ? { "X-Admin-Password": options.adminPassword } : {})
         },
         body: options.body ? JSON.stringify(options.body) : undefined
