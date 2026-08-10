@@ -201,6 +201,22 @@ exports.handler = async (event) => {
       return json(200, { ok: true });
     }
 
+    if (event.httpMethod === "POST" && route === "/admin/messages/delete-batch") {
+      requireAdmin(event);
+      let input;
+      try {
+        input = JSON.parse(event.body || "{}");
+      } catch {
+        return json(400, { error: "删除格式无效" });
+      }
+      const ids = new Set((Array.isArray(input.ids) ? input.ids : []).map((id) => String(id)).slice(0, MAX_MESSAGES));
+      if (!ids.size) return json(400, { error: "请选择要删除的弹幕" });
+      const before = state.messages.length;
+      state.messages = state.messages.filter((message) => !ids.has(message.id));
+      await store.setJSON(STATE_KEY, state);
+      return json(200, { removed: before - state.messages.length });
+    }
+
     if (event.httpMethod === "POST" && route === "/messages") {
       if (Buffer.byteLength(event.body || "", "utf8") > 4096) return json(413, { error: "弹幕内容过长" });
       let input;

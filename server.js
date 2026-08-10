@@ -222,6 +222,18 @@ async function handleApi(request, response, url) {
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/api/admin/messages/delete-batch") {
+    if (!isAdmin(request)) throw Object.assign(new Error("管理员验证失败"), { status: 401 });
+    const input = await readJson(request);
+    const ids = new Set((Array.isArray(input.ids) ? input.ids : []).map((id) => String(id)).slice(0, MAX_MESSAGES));
+    if (!ids.size) throw Object.assign(new Error("请选择要删除的弹幕"), { status: 400 });
+    const before = database.messages.length;
+    database.messages = database.messages.filter((message) => !ids.has(message.id));
+    persistDatabase();
+    sendJson(response, 200, { removed: before - database.messages.length });
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/messages") {
     const message = normalizeNewMessage(await readJson(request));
     database.messages.push(message);

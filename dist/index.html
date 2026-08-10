@@ -312,6 +312,10 @@
     }
 
     .danmaku-message {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 4px;
       min-height: 24px;
       width: 80%;
       flex: 0 0 auto;
@@ -321,7 +325,7 @@
       padding: 2px 6px;
       background: rgba(255, 255, 255, 0.26);
       color: #334943;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.35;
       word-break: break-word;
       overflow-wrap: anywhere;
@@ -329,6 +333,49 @@
       direction: ltr;
       justify-self: left;
       margin-left: 2px;
+    }
+
+    .danmaku-content {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .danmaku-moderation {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 4px;
+      margin-top: 0;
+    }
+
+    .danmaku-moderation button,
+    .danmaku-batch-btn,
+    .clear-danmaku-btn {
+      min-height: 22px;
+      border-color: rgba(89, 114, 112, 0.44);
+      border-radius: 4px;
+      padding: 1px 5px;
+      background: rgba(255, 255, 255, 0.48);
+      color: #315047;
+      font-size: 12px;
+    }
+
+    .danmaku-moderation .danger,
+    .clear-danmaku-btn,
+    .danmaku-batch-btn {
+      border-color: rgba(205, 67, 67, 0.44);
+      color: #a83838;
+    }
+
+    .clear-danmaku-btn {
+      position: absolute;
+      top: 0;
+      right: -49px;
+    }
+
+    .danmaku-batch-btn {
+      position: absolute;
+      right: -64px;
+      bottom: 36px;
     }
 
     .new-messages-btn {
@@ -348,6 +395,26 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 6px;
+    }
+
+    .danmaku-input-wrap {
+      position: relative;
+      min-width: 0;
+    }
+
+    .danmaku-input-wrap .danmaku-input {
+      width: 100%;
+      padding-right: 38px;
+    }
+
+    .danmaku-count {
+      position: absolute;
+      top: 50%;
+      right: 7px;
+      color: #52645f;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      transform: translateY(-50%);
     }
 
     .danmaku-input {
@@ -894,6 +961,24 @@
       box-shadow: 0 24px 80px rgba(11, 28, 31, 0.3);
     }
 
+    .admin-dialog {
+      display: block;
+      overflow-y: auto;
+      scrollbar-color: #9ebeb5 #f4f8f6;
+    }
+
+    .admin-dialog .modal-head {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .admin-dialog .my-fish-list {
+      min-height: 0;
+      max-height: none;
+      overflow: visible;
+    }
+
     .my-fish-summary {
       padding: 10px 14px;
       border-bottom: 1px solid var(--line);
@@ -990,6 +1075,16 @@
     .admin-danger {
       border-color: rgba(205, 67, 67, 0.44);
       color: #b83b3b;
+    }
+
+    .threshold-edit {
+      margin-top: 3px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: #276f62;
+      font-size: 12px;
+      text-decoration: underline;
     }
 
     .intro-copy {
@@ -1133,9 +1228,13 @@
     }
 
     .rank-thumb {
+      display: block;
       width: 36px;
       height: 24px;
+      justify-self: center;
+      align-self: center;
       object-fit: contain;
+      object-position: center center;
       border: 1px solid var(--line);
       border-radius: 5px;
       background: #f8fbfa;
@@ -1336,6 +1435,7 @@
         <div class="status-item">
           <span>质检门槛</span>
           <strong id="passScoreText">75%</strong>
+          <button class="threshold-edit" id="editThresholdBtn" type="button" hidden>修改</button>
         </div>
       </div>
     </header>
@@ -1348,8 +1448,13 @@
           <section class="danmaku-panel" aria-label="弹幕">
             <div class="danmaku-list" id="danmakuList" aria-live="polite"></div>
             <button class="new-messages-btn" id="newMessagesBtn" type="button" hidden>新消息</button>
+            <button class="clear-danmaku-btn" id="clearDanmakuBtn" type="button" hidden>清空</button>
+            <button class="danmaku-batch-btn" id="deleteSelectedMessagesBtn" type="button" hidden>删除</button>
             <form class="danmaku-form" id="danmakuForm">
-              <input class="danmaku-input" id="danmakuInput" maxlength="30" autocomplete="off" placeholder="说点什么吧">
+              <div class="danmaku-input-wrap">
+                <input class="danmaku-input" id="danmakuInput" maxlength="30" autocomplete="off" placeholder="说点什么吧">
+                <span class="danmaku-count" id="danmakuCount">0/30</span>
+              </div>
               <button class="danmaku-send" id="danmakuSendBtn" type="submit">发送</button>
             </form>
           </section>
@@ -1406,7 +1511,7 @@
   </section>
 
   <section class="modal-layer" id="adminModal" aria-label="管理员模式" aria-modal="true" role="dialog">
-    <div class="my-fish-dialog">
+    <div class="my-fish-dialog admin-dialog">
       <div class="modal-head">
         <h2>管理员模式</h2>
         <button class="icon-btn" id="closeAdminBtn" type="button" title="关闭">×</button>
@@ -1420,15 +1525,10 @@
         <button class="submit-btn" id="adminLoginBtn" type="button">进入管理</button>
       </div>
       <div class="form-stack" id="adminPanel" hidden>
-        <div class="field">
-          <label for="adminThreshold">质检门槛 <strong id="adminThresholdValue">75%</strong></label>
-          <input id="adminThreshold" type="range" min="60" max="95" value="75">
-        </div>
-        <button class="submit-btn" id="saveAdminSettingsBtn" type="button">保存质检门槛</button>
         <div class="admin-actions">
           <button id="selectAllAdminFishBtn" type="button">全选鱼苗</button>
           <button class="admin-danger" id="deleteSelectedFishBtn" type="button">批量删除</button>
-          <button class="admin-danger" id="clearDanmakuBtn" type="button">清空弹幕</button>
+          <button id="exitAdminModeBtn" type="button">退出管理</button>
         </div>
         <p class="my-fish-summary">点击删除可移出任意鱼苗</p>
         <div class="my-fish-list" id="adminFishList"></div>
@@ -1589,6 +1689,7 @@
       newMessagesBtn: document.getElementById("newMessagesBtn"),
       danmakuForm: document.getElementById("danmakuForm"),
       danmakuInput: document.getElementById("danmakuInput"),
+      danmakuCount: document.getElementById("danmakuCount"),
       danmakuSendBtn: document.getElementById("danmakuSendBtn"),
       drawCanvas: document.getElementById("drawCanvas"),
       drawCanvasWrap: document.getElementById("drawCanvasWrap"),
@@ -1611,12 +1712,11 @@
       adminPassword: document.getElementById("adminPassword"),
       adminError: document.getElementById("adminError"),
       adminLoginBtn: document.getElementById("adminLoginBtn"),
-      adminThreshold: document.getElementById("adminThreshold"),
-      adminThresholdValue: document.getElementById("adminThresholdValue"),
-      saveAdminSettingsBtn: document.getElementById("saveAdminSettingsBtn"),
       selectAllAdminFishBtn: document.getElementById("selectAllAdminFishBtn"),
       deleteSelectedFishBtn: document.getElementById("deleteSelectedFishBtn"),
+      exitAdminModeBtn: document.getElementById("exitAdminModeBtn"),
       clearDanmakuBtn: document.getElementById("clearDanmakuBtn"),
+      deleteSelectedMessagesBtn: document.getElementById("deleteSelectedMessagesBtn"),
       adminFishList: document.getElementById("adminFishList"),
       myFishModal: document.getElementById("myFishModal"),
       closeMyFishBtn: document.getElementById("closeMyFishBtn"),
@@ -1631,6 +1731,7 @@
       fishCount: document.getElementById("fishCount"),
       heartCount: document.getElementById("heartCount"),
       passScoreText: document.getElementById("passScoreText"),
+      editThresholdBtn: document.getElementById("editThresholdBtn"),
       leaderboard: document.getElementById("leaderboard"),
       fishName: document.getElementById("fishName"),
       nameError: document.getElementById("nameError"),
@@ -1682,6 +1783,7 @@
     let adminPassword = "";
     let isAdmin = false;
     const selectedAdminFishIds = new Set();
+    const selectedAdminMessageIds = new Set();
     let currentBreakdown = [];
     let pendingFishImage = null;
     let pendingFacing = 1;
@@ -1739,11 +1841,12 @@
       els.closeMyFishBtn.addEventListener("click", closeMyFishModal);
       els.closeAdminBtn.addEventListener("click", closeAdminModal);
       els.adminLoginBtn.addEventListener("click", loginAdmin);
-      els.saveAdminSettingsBtn.addEventListener("click", saveAdminSettings);
       els.selectAllAdminFishBtn.addEventListener("click", toggleSelectAllAdminFish);
       els.deleteSelectedFishBtn.addEventListener("click", deleteSelectedAdminFish);
+      els.exitAdminModeBtn.addEventListener("click", exitAdminMode);
       els.clearDanmakuBtn.addEventListener("click", clearDanmakuAsAdmin);
-      els.adminThreshold.addEventListener("input", updateAdminThresholdLabel);
+      els.deleteSelectedMessagesBtn.addEventListener("click", deleteSelectedDanmaku);
+      els.editThresholdBtn.addEventListener("click", editQualityThreshold);
       els.myFishModal.addEventListener("click", (event) => {
         if (event.target === els.myFishModal) closeMyFishModal();
       });
@@ -1798,6 +1901,7 @@
       els.fishName.addEventListener("input", clearNameError);
       els.tankCanvas.addEventListener("click", handleTankClick);
       els.danmakuForm.addEventListener("submit", sendDanmaku);
+      els.danmakuInput.addEventListener("input", updateDanmakuCount);
       els.danmakuList.addEventListener("scroll", () => {
         if (isDanmakuAtBottom()) els.newMessagesBtn.hidden = true;
       });
@@ -2635,6 +2739,8 @@
       const messages = [...(state.messages || [])]
         .sort((a, b) => a.createdAt - b.createdAt)
         .slice(-DANMAKU_MAX_MESSAGES);
+      els.clearDanmakuBtn.hidden = !isAdmin;
+      els.deleteSelectedMessagesBtn.hidden = !isAdmin || selectedAdminMessageIds.size === 0;
       const wasAtBottom = isDanmakuAtBottom();
       const hasNewMessages = messages.some((message) => !renderedDanmakuIds.has(message.id));
       els.danmakuList.replaceChildren();
@@ -2648,7 +2754,29 @@
       messages.forEach((message) => {
         const row = document.createElement("div");
         row.className = "danmaku-message";
-        row.textContent = `${message.name}：${message.content}`;
+        const content = document.createElement("span");
+        content.className = "danmaku-content";
+        content.textContent = `${message.name}：${message.content}`;
+        row.appendChild(content);
+        if (isAdmin) {
+          const actions = document.createElement("div");
+          actions.className = "danmaku-moderation";
+          const select = document.createElement("button");
+          select.type = "button";
+          select.textContent = selectedAdminMessageIds.has(message.id) ? "已选" : "选择";
+          select.addEventListener("click", () => {
+            if (selectedAdminMessageIds.has(message.id)) selectedAdminMessageIds.delete(message.id);
+            else selectedAdminMessageIds.add(message.id);
+            renderDanmaku();
+          });
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "danger";
+          remove.textContent = "删除";
+          remove.addEventListener("click", () => deleteDanmakuMessages([message.id]));
+          actions.append(select, remove);
+          row.appendChild(actions);
+        }
         els.danmakuList.appendChild(row);
       });
       renderedDanmakuIds = new Set(messages.map((message) => message.id));
@@ -2664,6 +2792,10 @@
     function isDanmakuAtBottom() {
       const list = els.danmakuList;
       return list.scrollHeight - list.scrollTop - list.clientHeight < 8;
+    }
+
+    function updateDanmakuCount() {
+      els.danmakuCount.textContent = `${els.danmakuInput.value.length}/30`;
     }
 
     function scrollDanmakuToBottom() {
@@ -2686,6 +2818,7 @@
       };
       localDanmakuIds.add(message.id);
       els.danmakuInput.value = "";
+      updateDanmakuCount();
       els.danmakuSendBtn.disabled = true;
       danmakuForceScroll = true;
       state.messages = [message, ...(state.messages || [])];
@@ -2733,6 +2866,7 @@
         const response = await apiRequest("/api/admin/verify", { method: "POST", adminPassword: password });
         adminPassword = password;
         isAdmin = true;
+        els.editThresholdBtn.hidden = false;
         passScore = Number(response.qualityThreshold) || PASS_SCORE;
         els.passScoreText.textContent = `${passScore}%`;
         els.adminLoginPanel.hidden = true;
@@ -2745,13 +2879,7 @@
       }
     }
 
-    function updateAdminThresholdLabel() {
-      els.adminThresholdValue.textContent = `${els.adminThreshold.value}%`;
-    }
-
     function renderAdminPanel() {
-      els.adminThreshold.value = String(passScore);
-      updateAdminThresholdLabel();
       els.adminFishList.replaceChildren();
       [...state.fish].sort((a, b) => b.createdAt - a.createdAt).forEach((fish) => {
         const row = document.createElement("div");
@@ -2790,20 +2918,37 @@
         : "全选鱼苗";
     }
 
-    async function saveAdminSettings() {
+    async function editQualityThreshold() {
+      if (!isAdmin) return;
+      const value = window.prompt("请输入 60 到 95 之间的质检门槛", String(passScore));
+      if (value === null) return;
+      const qualityThreshold = Number(value);
+      if (!Number.isFinite(qualityThreshold) || qualityThreshold < 60 || qualityThreshold > 95) {
+        showToast("请输入 60 到 95 之间的数字");
+        return;
+      }
       try {
         const response = await apiRequest("/api/admin/settings", {
           method: "POST",
           adminPassword,
-          body: { qualityThreshold: Number(els.adminThreshold.value) }
+          body: { qualityThreshold }
         });
         passScore = Number(response.qualityThreshold) || PASS_SCORE;
         els.passScoreText.textContent = `${passScore}%`;
-        renderAdminPanel();
         showToast("质检门槛已更新");
       } catch (error) {
         showToast(error.message || "保存失败");
       }
+    }
+
+    function exitAdminMode() {
+      isAdmin = false;
+      adminPassword = "";
+      selectedAdminFishIds.clear();
+      selectedAdminMessageIds.clear();
+      els.editThresholdBtn.hidden = true;
+      closeAdminModal();
+      renderDanmaku();
     }
 
     async function deleteAdminFish(id) {
@@ -2852,11 +2997,32 @@
         await apiRequest("/api/admin/messages", { method: "DELETE", adminPassword });
         state.messages = [];
         renderedDanmakuIds.clear();
+        selectedAdminMessageIds.clear();
         renderDanmaku();
         showToast("弹幕已清空");
       } catch (error) {
         showToast(error.message || "清空弹幕失败");
       }
+    }
+
+    async function deleteDanmakuMessages(ids) {
+      if (!ids.length) return;
+      try {
+        await apiRequest("/api/admin/messages/delete-batch", { method: "POST", adminPassword, body: { ids } });
+        const removed = new Set(ids);
+        state.messages = state.messages.filter((message) => !removed.has(message.id));
+        ids.forEach((id) => selectedAdminMessageIds.delete(id));
+        renderDanmaku();
+      } catch (error) {
+        showToast(error.message || "删除弹幕失败");
+      }
+    }
+
+    async function deleteSelectedDanmaku() {
+      const ids = [...selectedAdminMessageIds];
+      if (!ids.length) return;
+      if (!window.confirm(`确定删除选中的 ${ids.length} 条弹幕吗？`)) return;
+      await deleteDanmakuMessages(ids);
     }
 
     function openMyFishModal() {
