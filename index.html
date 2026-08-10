@@ -1234,6 +1234,7 @@
       <div class="status-strip" aria-label="鱼缸统计">
         <button class="primary-action" id="newFishBtn" type="button">添加鱼苗</button>
         <button class="my-fish-action" id="myFishBtn" type="button">我的鱼苗</button>
+        <button class="my-fish-action" id="adminBtn" type="button">管理</button>
         <div class="status-item">
           <span>鱼</span>
           <strong id="fishCount">0</strong>
@@ -1310,6 +1311,32 @@
       </div>
       <p class="my-fish-summary" id="myFishSummary">三分钟内添加的鱼苗可以删除</p>
       <div class="my-fish-list" id="myFishList"></div>
+    </div>
+  </section>
+
+  <section class="modal-layer" id="adminModal" aria-label="管理员模式" aria-modal="true" role="dialog">
+    <div class="my-fish-dialog">
+      <div class="modal-head">
+        <h2>管理员模式</h2>
+        <button class="icon-btn" id="closeAdminBtn" type="button" title="关闭">×</button>
+      </div>
+      <div class="form-stack" id="adminLoginPanel">
+        <div class="field">
+          <label for="adminPassword">管理员口令</label>
+          <input id="adminPassword" type="password" autocomplete="current-password">
+        </div>
+        <p class="name-error" id="adminError" role="alert"></p>
+        <button class="submit-btn" id="adminLoginBtn" type="button">进入管理</button>
+      </div>
+      <div class="form-stack" id="adminPanel" hidden>
+        <div class="field">
+          <label for="adminThreshold">质检门槛 <strong id="adminThresholdValue">75%</strong></label>
+          <input id="adminThreshold" type="range" min="60" max="95" value="75">
+        </div>
+        <button class="submit-btn" id="saveAdminSettingsBtn" type="button">保存质检门槛</button>
+        <p class="my-fish-summary">点击删除可移出任意鱼苗</p>
+        <div class="my-fish-list" id="adminFishList"></div>
+      </div>
     </div>
   </section>
 
@@ -1455,7 +1482,7 @@
       lastRemovedCount: 0
     };
     const clientId = getClientId();
-    const danmakuOpenedAt = Date.now();
+    let danmakuOpenedServerTime = null;
     const danmakuSessionId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const danmakuName = getRandomDanmakuName();
 
@@ -1479,6 +1506,18 @@
       closeResultBtn: document.getElementById("closeResultBtn"),
       newFishBtn: document.getElementById("newFishBtn"),
       myFishBtn: document.getElementById("myFishBtn"),
+      adminBtn: document.getElementById("adminBtn"),
+      adminModal: document.getElementById("adminModal"),
+      closeAdminBtn: document.getElementById("closeAdminBtn"),
+      adminLoginPanel: document.getElementById("adminLoginPanel"),
+      adminPanel: document.getElementById("adminPanel"),
+      adminPassword: document.getElementById("adminPassword"),
+      adminError: document.getElementById("adminError"),
+      adminLoginBtn: document.getElementById("adminLoginBtn"),
+      adminThreshold: document.getElementById("adminThreshold"),
+      adminThresholdValue: document.getElementById("adminThresholdValue"),
+      saveAdminSettingsBtn: document.getElementById("saveAdminSettingsBtn"),
+      adminFishList: document.getElementById("adminFishList"),
       myFishModal: document.getElementById("myFishModal"),
       closeMyFishBtn: document.getElementById("closeMyFishBtn"),
       myFishSummary: document.getElementById("myFishSummary"),
@@ -1539,6 +1578,9 @@
     let lastRawPoint = null;
     let undoStack = [];
     let currentScore = 0;
+    let passScore = PASS_SCORE;
+    let adminPassword = "";
+    let isAdmin = false;
     let currentBreakdown = [];
     let pendingFishImage = null;
     let pendingFacing = 1;
@@ -1559,7 +1601,7 @@
       bindEvents();
       updateDraftAvailability();
       resetSubmission();
-      els.passScoreText.textContent = `${PASS_SCORE}%`;
+      els.passScoreText.textContent = `${passScore}%`;
       renderAll();
       if (location.hash === "#new") {
         els.introModal.classList.remove("open");
@@ -1588,9 +1630,17 @@
       window.addEventListener("pointercancel", stopDrawing);
       els.newFishBtn.addEventListener("click", openFishModal);
       els.myFishBtn.addEventListener("click", openMyFishModal);
+      els.adminBtn.addEventListener("click", openAdminModal);
       els.closeMyFishBtn.addEventListener("click", closeMyFishModal);
+      els.closeAdminBtn.addEventListener("click", closeAdminModal);
+      els.adminLoginBtn.addEventListener("click", loginAdmin);
+      els.saveAdminSettingsBtn.addEventListener("click", saveAdminSettings);
+      els.adminThreshold.addEventListener("input", updateAdminThresholdLabel);
       els.myFishModal.addEventListener("click", (event) => {
         if (event.target === els.myFishModal) closeMyFishModal();
+      });
+      els.adminModal.addEventListener("click", (event) => {
+        if (event.target === els.adminModal) closeAdminModal();
       });
       els.closeIntroBtn.addEventListener("click", () => els.introModal.classList.remove("open"));
       els.closeModalBtn.addEventListener("click", requestCloseFishModal);
@@ -1653,6 +1703,7 @@
         else if (els.resultLayer.classList.contains("open")) closeResult();
         else if (els.fishModal.classList.contains("open")) requestCloseFishModal();
         else if (els.myFishModal.classList.contains("open")) closeMyFishModal();
+        else if (els.adminModal.classList.contains("open")) closeAdminModal();
       });
       document.querySelectorAll(".line-btn").forEach((button) => {
         button.addEventListener("click", () => {
@@ -2103,9 +2154,9 @@
       els.resultBox.classList.add("show");
       els.scoreText.textContent = `${currentScore}%`;
       els.scoreFill.style.width = `${currentScore}%`;
-      els.scoreFill.classList.toggle("pass", currentScore >= PASS_SCORE);
+      els.scoreFill.classList.toggle("pass", currentScore >= passScore);
 
-      if (currentScore < PASS_SCORE) {
+      if (currentScore < passScore) {
         els.nameStep.classList.remove("show");
         pendingFishImage = null;
         const suggestion = getQualitySuggestion(currentBreakdown);
@@ -2144,7 +2195,7 @@
     }
 
     async function saveNamedFish() {
-      if (!pendingFishImage || currentScore < PASS_SCORE) {
+      if (!pendingFishImage || currentScore < passScore) {
         showToast("先提交检测，通过后再取名");
         return;
       }
@@ -2389,7 +2440,7 @@
       const total = tailStrong ? rawTotal : Math.min(rawTotal, 68);
 
       const breakdown = [];
-      if (total >= PASS_SCORE) {
+      if (total >= passScore) {
         breakdown.push("通过");
       } else {
         if (aspectScore < 10) breakdown.push("鱼身比例不像简笔鱼");
@@ -2468,11 +2519,12 @@
       renderDanmaku();
       renderMaintenance();
       if (els.myFishModal.classList.contains("open")) renderMyFish();
+      if (isAdmin && els.adminModal.classList.contains("open")) renderAdminPanel();
     }
 
     function renderDanmaku() {
       const messages = [...(state.messages || [])]
-        .filter((message) => message.createdAt >= danmakuOpenedAt)
+        .filter((message) => danmakuOpenedServerTime === null || message.createdAt >= danmakuOpenedServerTime)
         .sort((a, b) => b.createdAt - a.createdAt);
       els.danmakuList.replaceChildren();
       if (!messages.length) {
@@ -2517,6 +2569,102 @@
       } finally {
         els.danmakuSendBtn.disabled = false;
         renderDanmaku();
+      }
+    }
+
+    function openAdminModal() {
+      els.adminError.textContent = "";
+      els.adminPassword.value = "";
+      els.adminLoginPanel.hidden = isAdmin;
+      els.adminPanel.hidden = !isAdmin;
+      if (isAdmin) renderAdminPanel();
+      els.adminModal.classList.add("open");
+      if (!isAdmin) els.adminPassword.focus();
+    }
+
+    function closeAdminModal() {
+      els.adminModal.classList.remove("open");
+    }
+
+    async function loginAdmin() {
+      const password = els.adminPassword.value;
+      if (!password) return;
+      els.adminLoginBtn.disabled = true;
+      els.adminError.textContent = "";
+      try {
+        const response = await apiRequest("/api/admin/verify", { method: "POST", adminPassword: password });
+        adminPassword = password;
+        isAdmin = true;
+        passScore = Number(response.qualityThreshold) || PASS_SCORE;
+        els.passScoreText.textContent = `${passScore}%`;
+        els.adminLoginPanel.hidden = true;
+        els.adminPanel.hidden = false;
+        renderAdminPanel();
+      } catch (error) {
+        els.adminError.textContent = error.message || "管理员口令不正确";
+      } finally {
+        els.adminLoginBtn.disabled = false;
+      }
+    }
+
+    function updateAdminThresholdLabel() {
+      els.adminThresholdValue.textContent = `${els.adminThreshold.value}%`;
+    }
+
+    function renderAdminPanel() {
+      els.adminThreshold.value = String(passScore);
+      updateAdminThresholdLabel();
+      els.adminFishList.replaceChildren();
+      [...state.fish].sort((a, b) => b.createdAt - a.createdAt).forEach((fish) => {
+        const row = document.createElement("div");
+        row.className = "my-fish-row";
+        const thumb = document.createElement("img");
+        thumb.className = "my-fish-thumb";
+        thumb.src = fish.src;
+        thumb.alt = fish.name;
+        const info = document.createElement("div");
+        info.className = "my-fish-info";
+        const name = document.createElement("div");
+        name.className = "my-fish-name";
+        name.textContent = fish.name;
+        const meta = document.createElement("div");
+        meta.className = "my-fish-meta";
+        meta.textContent = `♥ ${fish.hearts}`;
+        info.append(name, meta);
+        const remove = document.createElement("button");
+        remove.className = "my-fish-delete";
+        remove.type = "button";
+        remove.textContent = "删除";
+        remove.addEventListener("click", () => deleteAdminFish(fish.id));
+        row.append(thumb, info, remove);
+        els.adminFishList.appendChild(row);
+      });
+    }
+
+    async function saveAdminSettings() {
+      try {
+        const response = await apiRequest("/api/admin/settings", {
+          method: "POST",
+          adminPassword,
+          body: { qualityThreshold: Number(els.adminThreshold.value) }
+        });
+        passScore = Number(response.qualityThreshold) || PASS_SCORE;
+        els.passScoreText.textContent = `${passScore}%`;
+        renderAdminPanel();
+        showToast("质检门槛已更新");
+      } catch (error) {
+        showToast(error.message || "保存失败");
+      }
+    }
+
+    async function deleteAdminFish(id) {
+      try {
+        await apiRequest(`/api/fish/${encodeURIComponent(id)}`, { method: "DELETE", adminPassword });
+        state.fish = state.fish.filter((fish) => fish.id !== id);
+        renderAll();
+        renderAdminPanel();
+      } catch (error) {
+        showToast(error.message || "删除失败");
       }
     }
 
@@ -3509,7 +3657,8 @@
         method: options.method || "GET",
         headers: {
           "Content-Type": "application/json",
-          "X-Client-Id": clientId
+          "X-Client-Id": clientId,
+          ...(options.adminPassword ? { "X-Admin-Password": options.adminPassword } : {})
         },
         body: options.body ? JSON.stringify(options.body) : undefined
       });
@@ -3548,6 +3697,11 @@
         state.messages = Array.isArray(response.messages)
           ? response.messages.map(normalizeMessage).filter(Boolean)
           : [];
+        if (danmakuOpenedServerTime === null) {
+          danmakuOpenedServerTime = Number(response.serverTime) || Date.now();
+        }
+        passScore = Number(response.qualityThreshold) || PASS_SCORE;
+        els.passScoreText.textContent = `${passScore}%`;
         state.lastCleanupAt = Date.now();
         renderAll();
       } catch (error) {
