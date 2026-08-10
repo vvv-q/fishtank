@@ -284,24 +284,64 @@
     }
 
     .danmaku-list {
-      display: grid;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
       gap: 5px;
-      max-height: 190px;
-      overflow: auto;
-      padding-right: 2px;
+      height: 198px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding-right: 0;
+      padding-left: 2px;
+      direction: rtl;
+      scrollbar-color: rgba(91, 119, 117, 0.42) transparent;
+      scrollbar-width: thin;
+    }
+
+    .danmaku-list::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    .danmaku-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .danmaku-list::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(91, 119, 117, 0.34);
     }
 
     .danmaku-message {
-      overflow: hidden;
+      min-height: 24px;
+      width: 80%;
+      flex: 0 0 auto;
+      overflow: visible;
       border: 1px solid rgba(103, 113, 113, 0.42);
       border-radius: 4px;
-      padding: 3px 6px;
+      padding: 2px 6px;
       background: rgba(255, 255, 255, 0.26);
       color: #334943;
       font-size: 14px;
       line-height: 1.35;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      white-space: normal;
+      direction: ltr;
+      justify-self: left;
+      margin-left: 2px;
+    }
+
+    .new-messages-btn {
+      position: absolute;
+      right: 0;
+      bottom: 37px;
+      min-height: 24px;
+      border-color: rgba(89, 114, 112, 0.44);
+      border-radius: 4px;
+      padding: 2px 7px;
+      background: rgba(255, 255, 255, 0.5);
+      color: #315047;
+      font-size: 12px;
     }
 
     .danmaku-form {
@@ -504,6 +544,11 @@
       background: transparent;
       color: #b8790c;
       transform: rotate(12deg);
+    }
+
+    .admin-entry span {
+      display: block;
+      transform: translateY(3px);
     }
 
     .tool-btn.active {
@@ -1275,6 +1320,7 @@
           <canvas class="tank-canvas" id="tankCanvas"></canvas>
           <section class="danmaku-panel" aria-label="弹幕">
             <div class="danmaku-list" id="danmakuList" aria-live="polite"></div>
+            <button class="new-messages-btn" id="newMessagesBtn" type="button" hidden>新消息</button>
             <form class="danmaku-form" id="danmakuForm">
               <input class="danmaku-input" id="danmakuInput" maxlength="80" autocomplete="off" placeholder="说点什么吧">
               <button class="danmaku-send" id="danmakuSendBtn" type="submit">发送</button>
@@ -1492,6 +1538,7 @@
     const DRAW_WIDTH = 1000;
     const DRAW_HEIGHT = 450;
     const PASS_SCORE = 75;
+    const DANMAKU_MAX_MESSAGES = 100;
     const SHARED_MODE = location.protocol === "http:" || location.protocol === "https:";
     const defaultState = {
       fish: [],
@@ -1500,7 +1547,6 @@
       lastRemovedCount: 0
     };
     const clientId = getClientId();
-    let danmakuOpenedServerTime = null;
     const danmakuSessionId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const danmakuName = getRandomDanmakuName();
 
@@ -1508,6 +1554,7 @@
       tankCanvas: document.getElementById("tankCanvas"),
       catCanvas: document.getElementById("catCanvas"),
       danmakuList: document.getElementById("danmakuList"),
+      newMessagesBtn: document.getElementById("newMessagesBtn"),
       danmakuForm: document.getElementById("danmakuForm"),
       danmakuInput: document.getElementById("danmakuInput"),
       danmakuSendBtn: document.getElementById("danmakuSendBtn"),
@@ -1607,6 +1654,9 @@
     let likeBurst = null;
     const pendingLikes = new Map();
     const localDanmakuIds = new Set();
+    let danmakuInitialScrollDone = false;
+    let danmakuForceScroll = false;
+    let renderedDanmakuIds = new Set();
     let draftSaveAfterReplace = null;
     const dropAnimations = new Map();
     const MIN_CANVAS_ZOOM = 1;
@@ -1709,6 +1759,10 @@
       els.fishName.addEventListener("input", clearNameError);
       els.tankCanvas.addEventListener("click", handleTankClick);
       els.danmakuForm.addEventListener("submit", sendDanmaku);
+      els.danmakuList.addEventListener("scroll", () => {
+        if (isDanmakuAtBottom()) els.newMessagesBtn.hidden = true;
+      });
+      els.newMessagesBtn.addEventListener("click", () => scrollDanmakuToBottom());
       els.sortBtn.addEventListener("click", renderLeaderboard);
       window.addEventListener("resize", () => {
         renderAll();
@@ -1849,7 +1903,6 @@
       const visited = new Uint8Array(DRAW_WIDTH * DRAW_HEIGHT);
       const area = [];
       const stack = [startY * DRAW_WIDTH + startX];
-      let reachesEdge = false;
       while (stack.length) {
         const index = stack.pop();
         if (visited[index]) continue;
@@ -1858,14 +1911,12 @@
         const y = Math.floor(index / DRAW_WIDTH);
         if (pixels[index * 4 + 3] > 24) continue;
         area.push(index);
-        if (x === 0 || y === 0 || x === DRAW_WIDTH - 1 || y === DRAW_HEIGHT - 1) reachesEdge = true;
         if (x > 0) stack.push(index - 1);
         if (x < DRAW_WIDTH - 1) stack.push(index + 1);
         if (y > 0) stack.push(index - DRAW_WIDTH);
         if (y < DRAW_HEIGHT - 1) stack.push(index + DRAW_WIDTH);
       }
-      if (reachesEdge || !area.length) {
-        showToast("油漆桶只能填充封闭的区域");
+      if (!area.length) {
         return false;
       }
 
@@ -2543,8 +2594,10 @@
 
     function renderDanmaku() {
       const messages = [...(state.messages || [])]
-        .filter((message) => danmakuOpenedServerTime === null || message.createdAt >= danmakuOpenedServerTime)
-        .sort((a, b) => a.createdAt - b.createdAt);
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .slice(-DANMAKU_MAX_MESSAGES);
+      const wasAtBottom = isDanmakuAtBottom();
+      const hasNewMessages = messages.some((message) => !renderedDanmakuIds.has(message.id));
       els.danmakuList.replaceChildren();
       if (!messages.length) {
         const empty = document.createElement("div");
@@ -2558,6 +2611,26 @@
         row.className = "danmaku-message";
         row.textContent = `${message.name}：${message.content}`;
         els.danmakuList.appendChild(row);
+      });
+      renderedDanmakuIds = new Set(messages.map((message) => message.id));
+      if (!danmakuInitialScrollDone || danmakuForceScroll || wasAtBottom) {
+        danmakuInitialScrollDone = true;
+        scrollDanmakuToBottom();
+      } else if (hasNewMessages) {
+        els.newMessagesBtn.hidden = false;
+      }
+      danmakuForceScroll = false;
+    }
+
+    function isDanmakuAtBottom() {
+      const list = els.danmakuList;
+      return list.scrollHeight - list.scrollTop - list.clientHeight < 8;
+    }
+
+    function scrollDanmakuToBottom() {
+      requestAnimationFrame(() => {
+        els.danmakuList.scrollTop = els.danmakuList.scrollHeight;
+        els.newMessagesBtn.hidden = true;
       });
     }
 
@@ -2575,6 +2648,7 @@
       localDanmakuIds.add(message.id);
       els.danmakuInput.value = "";
       els.danmakuSendBtn.disabled = true;
+      danmakuForceScroll = true;
       state.messages = [message, ...(state.messages || [])];
       renderDanmaku();
       try {
@@ -3738,9 +3812,6 @@
         );
         remoteIds.forEach((id) => localDanmakuIds.delete(id));
         state.messages = [...remoteMessages, ...awaitingMessages];
-        if (danmakuOpenedServerTime === null) {
-          danmakuOpenedServerTime = Number(response.serverTime) || Date.now();
-        }
         passScore = Number(response.qualityThreshold) || PASS_SCORE;
         els.passScoreText.textContent = `${passScore}%`;
         state.lastCleanupAt = Date.now();
