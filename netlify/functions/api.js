@@ -51,7 +51,11 @@ function getEightMonthCutoff() {
 
 function cleanupExpiredFish(state) {
   const cutoff = getEightMonthCutoff();
-  const fish = state.fish.filter((item) => Number(item.createdAt) >= cutoff);
+  // Keep legacy fish whose timestamp was not stored by an earlier deployment.
+  const fish = state.fish.filter((item) => {
+    const createdAt = Number(item.createdAt);
+    return !Number.isFinite(createdAt) || createdAt >= cutoff;
+  });
   return { fish, changed: fish.length !== state.fish.length };
 }
 

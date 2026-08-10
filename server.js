@@ -78,7 +78,10 @@ function getEightMonthCutoff() {
 function cleanupExpiredFish() {
   const cutoff = getEightMonthCutoff();
   const before = database.fish.length;
-  database.fish = database.fish.filter((fish) => Number(fish.createdAt) >= cutoff);
+  database.fish = database.fish.filter((fish) => {
+    const createdAt = Number(fish.createdAt);
+    return !Number.isFinite(createdAt) || createdAt >= cutoff;
+  });
   if (database.fish.length !== before) persistDatabase();
 }
 

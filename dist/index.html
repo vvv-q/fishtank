@@ -488,6 +488,22 @@
       line-height: 1;
     }
 
+    .admin-entry {
+      border-color: rgba(217, 162, 49, 0.58);
+      background: rgba(255, 251, 230, 0.74);
+      color: #d49a22;
+      font-family: Arial, sans-serif;
+      font-size: 21px;
+      text-shadow: 0 1px 0 #fff4c8;
+    }
+
+    .admin-entry:hover:not(:disabled) {
+      border-color: #c6840c;
+      background: #fff8dc;
+      color: #b8790c;
+      transform: rotate(12deg);
+    }
+
     .tool-btn.active {
       border-color: #2d7a69;
       background: var(--surface-soft);
@@ -1234,7 +1250,7 @@
       <div class="status-strip" aria-label="鱼缸统计">
         <button class="primary-action" id="newFishBtn" type="button">添加鱼苗</button>
         <button class="my-fish-action" id="myFishBtn" type="button">我的鱼苗</button>
-        <button class="icon-btn admin-entry" id="adminBtn" type="button" title="管理员登录" aria-label="管理员登录">管</button>
+        <button class="icon-btn admin-entry" id="adminBtn" type="button" title="管理员登录" aria-label="管理员登录"><span aria-hidden="true">☀</span></button>
         <div class="status-item">
           <span>鱼</span>
           <strong id="fishCount">0</strong>
@@ -2581,14 +2597,20 @@
     function openAdminModal() {
       els.adminError.textContent = "";
       els.adminPassword.value = "";
-      els.adminLoginPanel.hidden = isAdmin;
-      els.adminPanel.hidden = !isAdmin;
-      if (isAdmin) renderAdminPanel();
+      isAdmin = false;
+      adminPassword = "";
+      els.adminLoginPanel.hidden = false;
+      els.adminPanel.hidden = true;
       els.adminModal.classList.add("open");
-      if (!isAdmin) els.adminPassword.focus();
+      els.adminPassword.focus();
     }
 
     function closeAdminModal() {
+      isAdmin = false;
+      adminPassword = "";
+      els.adminPassword.value = "";
+      els.adminPanel.hidden = true;
+      els.adminLoginPanel.hidden = false;
       els.adminModal.classList.remove("open");
     }
 
@@ -3558,7 +3580,10 @@
     function cleanupOldFish() {
       const cutoff = getEightMonthCutoff();
       const before = state.fish.length;
-      state.fish = state.fish.filter((fish) => Number(fish.createdAt) >= cutoff);
+      state.fish = state.fish.filter((fish) => {
+        const createdAt = Number(fish.createdAt);
+        return !Number.isFinite(createdAt) || createdAt >= cutoff;
+      });
       state.lastRemovedCount = before - state.fish.length;
       state.lastCleanupAt = Date.now();
       renderAll();
