@@ -266,6 +266,69 @@
       pointer-events: none;
     }
 
+    .danmaku-panel {
+      position: absolute;
+      z-index: 3;
+      bottom: 14px;
+      left: 14px;
+      width: min(360px, calc(100% - 28px));
+      display: grid;
+      gap: 7px;
+      padding: 0;
+      background: transparent;
+    }
+
+    .danmaku-title {
+      color: #315047;
+      font-size: 15px;
+    }
+
+    .danmaku-list {
+      display: grid;
+      gap: 5px;
+      max-height: 190px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .danmaku-message {
+      overflow: hidden;
+      border: 1px solid rgba(103, 113, 113, 0.42);
+      border-radius: 4px;
+      padding: 3px 6px;
+      background: rgba(255, 255, 255, 0.26);
+      color: #334943;
+      font-size: 14px;
+      line-height: 1.35;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .danmaku-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+    }
+
+    .danmaku-input {
+      min-width: 0;
+      height: 32px;
+      border: 1px solid #9eadaa;
+      border-radius: 4px;
+      padding: 4px 7px;
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .danmaku-send {
+      min-width: 48px;
+      height: 32px;
+      border-color: #5d7e76;
+      background: transparent;
+      color: #245f54;
+      font-size: 14px;
+    }
+
     .tank-canvas {
       display: block;
       width: 100%;
@@ -681,6 +744,79 @@
       border-radius: var(--radius);
       background: #fff;
       box-shadow: 0 24px 80px rgba(11, 28, 31, 0.3);
+    }
+
+    .draft-dialog {
+      width: min(510px, calc(100vw - 32px));
+      max-height: min(640px, calc(100vh - 32px));
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(11, 28, 31, 0.3);
+    }
+
+    .draft-dialog-note {
+      margin: 12px 14px 8px;
+      color: #8b3f3b;
+      font-size: 14px;
+    }
+
+    .draft-list {
+      display: grid;
+      gap: 7px;
+      max-height: 380px;
+      overflow: auto;
+      padding: 8px 14px 14px;
+    }
+
+    .draft-empty {
+      padding: 24px 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .draft-row {
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 8px;
+      padding: 7px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fbfdfb;
+    }
+
+    .draft-thumb {
+      width: 58px;
+      height: 42px;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    .draft-time {
+      min-width: 0;
+      overflow: hidden;
+      color: #315047;
+      font-size: 15px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .draft-row button {
+      min-height: 30px;
+      padding: 4px 8px;
+      font-size: 13px;
+    }
+
+    .draft-delete {
+      border-color: rgba(205, 67, 67, 0.44);
+      color: #b83b3b;
+    }
+
+    .draft-discard-current {
+      width: calc(100% - 28px);
+      margin: 0 14px 14px;
     }
 
     .my-fish-dialog {
@@ -1118,6 +1254,13 @@
         <section class="tank-section" aria-label="大鱼缸">
           <canvas class="cat-layer" id="catCanvas" aria-hidden="true"></canvas>
           <canvas class="tank-canvas" id="tankCanvas"></canvas>
+          <section class="danmaku-panel" aria-label="弹幕">
+            <div class="danmaku-list" id="danmakuList" aria-live="polite"></div>
+            <form class="danmaku-form" id="danmakuForm">
+              <input class="danmaku-input" id="danmakuInput" maxlength="80" autocomplete="off" placeholder="说点什么吧">
+              <button class="danmaku-send" id="danmakuSendBtn" type="submit">发送</button>
+            </form>
+          </section>
           <div class="empty-tank" id="emptyTank">鱼缸里还没有鱼</div>
         </section>
 
@@ -1184,6 +1327,18 @@
     </div>
   </section>
 
+  <section class="modal-layer exit-layer" id="draftModal" aria-label="草稿箱" aria-modal="true" role="dialog">
+    <div class="draft-dialog">
+      <div class="modal-head">
+        <h2>草稿箱</h2>
+        <button class="icon-btn" id="closeDraftBtn" type="button" title="关闭">×</button>
+      </div>
+      <p class="draft-dialog-note" id="draftDialogNote">草稿箱只能存放五个草稿</p>
+      <div class="draft-list" id="draftList"></div>
+      <button class="exit-discard draft-discard-current" id="discardCurrentDraftBtn" type="button" hidden>放弃本次绘制的草稿</button>
+    </div>
+  </section>
+
   <section class="modal-layer" id="fishModal" aria-label="添加鱼苗" aria-modal="true" role="dialog">
     <div class="fry-modal">
       <div class="modal-head">
@@ -1201,7 +1356,7 @@
                 <button id="zoomInBtn" type="button" title="放大画布">+</button>
               </div>
               <button class="draft-btn" id="saveDraftBtn" type="button">保存草稿</button>
-              <button class="draft-btn" id="restoreDraftBtn" type="button">恢复草稿</button>
+              <button class="draft-btn" id="restoreDraftBtn" type="button">草稿箱</button>
             </div>
           </div>
           <div class="draw-canvas-wrap" id="drawCanvasWrap">
@@ -1212,6 +1367,7 @@
           <div class="tool-row" aria-label="绘画工具">
             <button class="tool-btn active" id="penBtn" type="button">画笔</button>
             <button class="tool-btn" id="eraserBtn" type="button">橡皮</button>
+            <button class="tool-btn" id="fillBtn" type="button" title="油漆桶">油漆桶</button>
             <button class="tool-btn line-btn active" type="button" data-line="smooth">圆线</button>
             <button class="tool-btn line-btn" type="button" data-line="pencil">铅笔</button>
             <button class="tool-btn line-btn" type="button" data-line="marker">马克</button>
@@ -1237,6 +1393,10 @@
             <label class="size-control">
               粗细
               <input id="brushSize" type="range" min="2" max="26" value="8">
+            </label>
+            <label class="size-control">
+              平滑
+              <input id="strokeSmoothing" type="range" min="0" max="100" value="45">
             </label>
             <button class="icon-btn" id="undoBtn" type="button" title="撤销">↶</button>
             <button class="icon-btn" id="clearBtn" type="button" title="清空画布">×</button>
@@ -1280,7 +1440,9 @@
   <script>
     const STORAGE_KEY = "shared-fish-tank-v1";
     const CLIENT_ID_KEY = "shared-fish-tank-client-id";
-    const DRAFT_KEY = "shared-fish-tank-draft-v1";
+    const DRAFTS_KEY = "shared-fish-tank-drafts-v2";
+    const LEGACY_DRAFT_KEY = "shared-fish-tank-draft-v1";
+    const MAX_DRAFTS = 5;
     const DELETE_WINDOW_MS = 3 * 60 * 1000;
     const DRAW_WIDTH = 1000;
     const DRAW_HEIGHT = 450;
@@ -1288,14 +1450,22 @@
     const SHARED_MODE = location.protocol === "http:" || location.protocol === "https:";
     const defaultState = {
       fish: [],
+      messages: [],
       lastCleanupAt: 0,
       lastRemovedCount: 0
     };
     const clientId = getClientId();
+    const danmakuOpenedAt = Date.now();
+    const danmakuSessionId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const danmakuName = getRandomDanmakuName();
 
     const els = {
       tankCanvas: document.getElementById("tankCanvas"),
       catCanvas: document.getElementById("catCanvas"),
+      danmakuList: document.getElementById("danmakuList"),
+      danmakuForm: document.getElementById("danmakuForm"),
+      danmakuInput: document.getElementById("danmakuInput"),
+      danmakuSendBtn: document.getElementById("danmakuSendBtn"),
       drawCanvas: document.getElementById("drawCanvas"),
       drawCanvasWrap: document.getElementById("drawCanvasWrap"),
       drawStage: document.getElementById("drawStage"),
@@ -1334,9 +1504,16 @@
       saveFishBtn: document.getElementById("saveFishBtn"),
       penBtn: document.getElementById("penBtn"),
       eraserBtn: document.getElementById("eraserBtn"),
+      fillBtn: document.getElementById("fillBtn"),
       brushSize: document.getElementById("brushSize"),
+      strokeSmoothing: document.getElementById("strokeSmoothing"),
       saveDraftBtn: document.getElementById("saveDraftBtn"),
       restoreDraftBtn: document.getElementById("restoreDraftBtn"),
+      draftModal: document.getElementById("draftModal"),
+      closeDraftBtn: document.getElementById("closeDraftBtn"),
+      draftList: document.getElementById("draftList"),
+      draftDialogNote: document.getElementById("draftDialogNote"),
+      discardCurrentDraftBtn: document.getElementById("discardCurrentDraftBtn"),
       undoBtn: document.getElementById("undoBtn"),
       clearBtn: document.getElementById("clearBtn"),
       sortBtn: document.getElementById("sortBtn"),
@@ -1359,6 +1536,7 @@
     let canvasZoom = 1;
     let isDrawing = false;
     let lastPoint = null;
+    let lastRawPoint = null;
     let undoStack = [];
     let currentScore = 0;
     let currentBreakdown = [];
@@ -1367,6 +1545,8 @@
     let hitboxes = [];
     let leaderFishId = null;
     let likeBurst = null;
+    const pendingLikes = new Map();
+    let draftSaveAfterReplace = null;
     const dropAnimations = new Map();
     const MIN_CANVAS_ZOOM = 1;
     const MAX_CANVAS_ZOOM = 3;
@@ -1429,10 +1609,22 @@
       });
       els.penBtn.addEventListener("click", () => setTool("pen"));
       els.eraserBtn.addEventListener("click", () => setTool("eraser"));
+      els.fillBtn.addEventListener("click", () => setTool("fill"));
       els.clearBtn.addEventListener("click", clearDrawing);
       els.undoBtn.addEventListener("click", undoDrawing);
       els.saveDraftBtn.addEventListener("click", saveDraft);
-      els.restoreDraftBtn.addEventListener("click", restoreDraft);
+      els.restoreDraftBtn.addEventListener("click", () => openDraftModal(false));
+      els.closeDraftBtn.addEventListener("click", closeDraftModal);
+      els.draftModal.addEventListener("click", (event) => {
+        if (event.target === els.draftModal) closeDraftModal();
+      });
+      els.discardCurrentDraftBtn.addEventListener("click", () => {
+        const afterSave = draftSaveAfterReplace;
+        draftSaveAfterReplace = null;
+        closeDraftModal();
+        showToast("已放弃本次绘制的草稿");
+        afterSave?.();
+      });
       els.zoomOutBtn.addEventListener("click", () => setCanvasZoom(canvasZoom - CANVAS_ZOOM_STEP));
       els.zoomInBtn.addEventListener("click", () => setCanvasZoom(canvasZoom + CANVAS_ZOOM_STEP));
       els.drawCanvasWrap.addEventListener("wheel", (event) => {
@@ -1447,6 +1639,7 @@
       });
       els.fishName.addEventListener("input", clearNameError);
       els.tankCanvas.addEventListener("click", handleTankClick);
+      els.danmakuForm.addEventListener("submit", sendDanmaku);
       els.sortBtn.addEventListener("click", renderLeaderboard);
       window.addEventListener("resize", () => {
         renderAll();
@@ -1479,25 +1672,41 @@
 
     function startDrawing(event) {
       event.preventDefault();
+      if (tool === "fill") {
+        if (fillClosedArea(getDrawPoint(event))) resetSubmission(false);
+        return;
+      }
       saveUndo();
       resetSubmission(false);
       isDrawing = true;
       lastPoint = getDrawPoint(event);
+      lastRawPoint = lastPoint;
       drawDot(lastPoint);
     }
 
     function drawMove(event) {
       if (!isDrawing) return;
       event.preventDefault();
-      const nextPoint = getDrawPoint(event);
+      const rawPoint = getDrawPoint(event);
+      const smoothing = Number(els.strokeSmoothing.value) / 100;
+      const follow = 1 - smoothing * 0.72;
+      const nextPoint = {
+        x: lastPoint.x + (rawPoint.x - lastPoint.x) * follow,
+        y: lastPoint.y + (rawPoint.y - lastPoint.y) * follow
+      };
       drawStroke(lastPoint, nextPoint);
       lastPoint = nextPoint;
+      lastRawPoint = rawPoint;
     }
 
-    function stopDrawing() {
+    function stopDrawing(event) {
       if (!isDrawing) return;
+      if (event?.clientX != null && event?.clientY != null && lastRawPoint) {
+        drawStroke(lastPoint, lastRawPoint);
+      }
       isDrawing = false;
       lastPoint = null;
+      lastRawPoint = null;
     }
 
     function drawStroke(from, to) {
@@ -1556,6 +1765,56 @@
       }
     }
 
+    function fillClosedArea(point) {
+      const startX = Math.max(0, Math.min(DRAW_WIDTH - 1, Math.floor(point.x)));
+      const startY = Math.max(0, Math.min(DRAW_HEIGHT - 1, Math.floor(point.y)));
+      const image = drawCtx.getImageData(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      const pixels = image.data;
+      const start = (startY * DRAW_WIDTH + startX) * 4;
+      if (pixels[start + 3] > 24) {
+        showToast("请点击鱼身轮廓里面的空白区域");
+        return false;
+      }
+
+      const visited = new Uint8Array(DRAW_WIDTH * DRAW_HEIGHT);
+      const area = [];
+      const stack = [startY * DRAW_WIDTH + startX];
+      let reachesEdge = false;
+      while (stack.length) {
+        const index = stack.pop();
+        if (visited[index]) continue;
+        visited[index] = 1;
+        const x = index % DRAW_WIDTH;
+        const y = Math.floor(index / DRAW_WIDTH);
+        if (pixels[index * 4 + 3] > 24) continue;
+        area.push(index);
+        if (x === 0 || y === 0 || x === DRAW_WIDTH - 1 || y === DRAW_HEIGHT - 1) reachesEdge = true;
+        if (x > 0) stack.push(index - 1);
+        if (x < DRAW_WIDTH - 1) stack.push(index + 1);
+        if (y > 0) stack.push(index - DRAW_WIDTH);
+        if (y < DRAW_HEIGHT - 1) stack.push(index + DRAW_WIDTH);
+      }
+      if (reachesEdge || !area.length) {
+        showToast("油漆桶只能填充封闭的区域");
+        return false;
+      }
+
+      const color = activeColor.replace("#", "");
+      const red = Number.parseInt(color.slice(0, 2), 16);
+      const green = Number.parseInt(color.slice(2, 4), 16);
+      const blue = Number.parseInt(color.slice(4, 6), 16);
+      saveUndo();
+      area.forEach((index) => {
+        const offset = index * 4;
+        pixels[offset] = red;
+        pixels[offset + 1] = green;
+        pixels[offset + 2] = blue;
+        pixels[offset + 3] = 255;
+      });
+      drawCtx.putImageData(image, 0, 0);
+      return true;
+    }
+
     function getDrawPoint(event) {
       const rect = els.drawCanvas.getBoundingClientRect();
       return {
@@ -1593,21 +1852,56 @@
       return false;
     }
 
-    function saveDraft() {
+    function getDrafts() {
+      try {
+        const drafts = JSON.parse(localStorage.getItem(DRAFTS_KEY) || "null");
+        if (Array.isArray(drafts)) return drafts.filter((draft) => draft?.id && draft?.src);
+
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_DRAFT_KEY) || "null");
+        if (legacy?.src) {
+          const migrated = [{ ...legacy, id: `${legacy.savedAt || Date.now()}-legacy` }];
+          localStorage.setItem(DRAFTS_KEY, JSON.stringify(migrated));
+          localStorage.removeItem(LEGACY_DRAFT_KEY);
+          return migrated;
+        }
+      } catch {
+        // A broken local draft must not prevent a new drawing from being saved.
+      }
+      return [];
+    }
+
+    function persistDrafts(drafts) {
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+      updateDraftAvailability();
+    }
+
+    function createDraft() {
+      return {
+        id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        src: els.drawCanvas.toDataURL("image/png"),
+        width: DRAW_WIDTH,
+        height: DRAW_HEIGHT,
+        savedAt: Date.now()
+      };
+    }
+
+    function saveDraft(afterSave) {
       if (!hasDrawing()) {
         showToast("画布还是空的，先画几笔吧");
         return false;
       }
+      const drafts = getDrafts();
+      if (drafts.length >= MAX_DRAFTS) {
+        draftSaveAfterReplace = typeof afterSave === "function" ? afterSave : null;
+        openDraftModal(true);
+        return false;
+      }
       try {
-        const draft = {
-          src: els.drawCanvas.toDataURL("image/png"),
-          width: DRAW_WIDTH,
-          height: DRAW_HEIGHT,
-          savedAt: Date.now()
-        };
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        drafts.push(createDraft());
+        persistDrafts(drafts);
         updateDraftAvailability();
-        showToast("草稿已保存，下次打开也可以继续画");
+        showToast("草稿已保存，可以在草稿箱中恢复");
+        afterSave?.();
         return true;
       } catch {
         showToast("草稿太大，浏览器没有足够的保存空间");
@@ -1615,18 +1909,65 @@
       }
     }
 
-    function restoreDraft() {
-      let draft;
-      try {
-        draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-      } catch {
-        draft = null;
+    function openDraftModal(isFull = false) {
+      const drafts = getDrafts();
+      els.draftDialogNote.textContent = isFull
+        ? "草稿箱已满，请删除一个草稿后再保存；也可以放弃本次绘制的草稿。"
+        : `草稿箱只能存放五个草稿（${drafts.length}/${MAX_DRAFTS}）`;
+      els.discardCurrentDraftBtn.hidden = !isFull;
+      els.draftList.replaceChildren();
+      if (!drafts.length) {
+        const empty = document.createElement("p");
+        empty.className = "draft-empty";
+        empty.textContent = "草稿箱还是空的";
+        els.draftList.appendChild(empty);
       }
-      if (!draft?.src) {
-        updateDraftAvailability();
-        showToast("还没有保存过草稿");
+      drafts.sort((a, b) => b.savedAt - a.savedAt).forEach((draft) => {
+        const row = document.createElement("div");
+        row.className = "draft-row";
+        const image = document.createElement("img");
+        image.className = "draft-thumb";
+        image.src = draft.src;
+        image.alt = "草稿预览";
+        const time = document.createElement("span");
+        time.className = "draft-time";
+        time.textContent = new Date(draft.savedAt).toLocaleString("zh-CN", { hour12: false });
+        const restore = document.createElement("button");
+        restore.type = "button";
+        restore.textContent = "恢复";
+        restore.disabled = isFull;
+        restore.addEventListener("click", () => restoreDraft(draft.id));
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "draft-delete";
+        remove.textContent = isFull ? "删除并保存" : "删除";
+        remove.addEventListener("click", () => deleteDraft(draft.id));
+        row.append(image, time, restore, remove);
+        els.draftList.appendChild(row);
+      });
+      els.draftModal.classList.add("open");
+    }
+
+    function closeDraftModal() {
+      draftSaveAfterReplace = null;
+      els.draftModal.classList.remove("open");
+    }
+
+    function deleteDraft(id) {
+      persistDrafts(getDrafts().filter((draft) => draft.id !== id));
+      const afterSave = draftSaveAfterReplace;
+      draftSaveAfterReplace = null;
+      if (afterSave) {
+        els.draftModal.classList.remove("open");
+        saveDraft(afterSave);
         return;
       }
+      openDraftModal(false);
+    }
+
+    function restoreDraft(id) {
+      const draft = getDrafts().find((item) => item.id === id);
+      if (!draft?.src) return;
 
       const image = new Image();
       image.onload = () => {
@@ -1635,24 +1976,26 @@
         drawCtx.drawImage(image, 0, 0, DRAW_WIDTH, DRAW_HEIGHT);
         resetSubmission();
         const savedTime = new Date(draft.savedAt || Date.now()).toLocaleString("zh-CN", { hour12: false });
+        closeDraftModal();
         showToast(`已恢复 ${savedTime} 保存的草稿`);
       };
       image.onerror = () => {
-        localStorage.removeItem(DRAFT_KEY);
-        updateDraftAvailability();
+        deleteDraft(draft.id);
         showToast("草稿已经损坏，无法恢复");
       };
       image.src = draft.src;
     }
 
     function updateDraftAvailability() {
-      els.restoreDraftBtn.disabled = !localStorage.getItem(DRAFT_KEY);
+      els.restoreDraftBtn.textContent = `草稿箱 ${getDrafts().length}/${MAX_DRAFTS}`;
+      els.restoreDraftBtn.disabled = false;
     }
 
     function setTool(nextTool) {
       tool = nextTool;
       els.penBtn.classList.toggle("active", tool === "pen");
       els.eraserBtn.classList.toggle("active", tool === "eraser");
+      els.fillBtn.classList.toggle("active", tool === "fill");
     }
 
     function updateCanvasStage(preserveCenter = false) {
@@ -1718,10 +2061,11 @@
     }
 
     function saveAndExit() {
-      if (!saveDraft()) return;
-      clearCanvasWithoutUndo();
-      resetSubmission();
-      closeFishModal();
+      saveDraft(() => {
+        clearCanvasWithoutUndo();
+        resetSubmission();
+        closeFishModal();
+      });
     }
 
     function discardAndExit() {
@@ -1856,7 +2200,8 @@
       }
       dropAnimations.set(fish.id, { started: performance.now(), duration: 1500 });
       clearCanvasWithoutUndo();
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(DRAFTS_KEY);
+      localStorage.removeItem(LEGACY_DRAFT_KEY);
       updateDraftAvailability();
       resetSubmission();
       els.saveFishBtn.disabled = false;
@@ -1979,6 +2324,10 @@
       const variationIsDirectional = Math.max(leftVariation, rightVariation) > Math.min(leftVariation, rightVariation) * 1.25;
       const tailOnLeft = variationIsDirectional ? leftVariation > rightVariation : leftFlare >= rightFlare;
       const facing = tailOnLeft ? 1 : -1;
+      const tailStrong = variationIsDirectional && (
+        (tailFlare >= 1.26 && tailArticulation >= 0.48) ||
+        tailArticulation >= 1.15
+      );
 
       const visited = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(false));
       const queue = [];
@@ -2024,26 +2373,20 @@
       const tailScore = Math.max(flareTailScore, articulatedTailScore);
       const outlineScore = Math.min(1, enclosed / 150) * 18;
       const symmetryScore = scorePeak(symmetry, 0.52, 0.88, 1.01) * 8;
-      const detailScore = Math.min(1, Math.max(0, detailComponents - 1) / 2) * 8;
+      const detailScore = Math.min(1, Math.max(0, detailComponents - 1) / 2) * 4;
       const structureDensity = occupiedCells / (gridWidth * gridHeight);
       const densityScore = scorePeak(structureDensity, 0.045, 0.16, 0.42) * 7;
-      const decoratedFishBonus = bodyScore >= 15 &&
-        outlineScore >= 12 &&
-        tailScore >= 9 &&
-        detailScore >= 6
-        ? 5
-        : 0;
-
-      const total = Math.round(
+      const rawTotal = Math.round(
         aspectScore +
         bodyScore +
         tailScore +
         outlineScore +
         symmetryScore +
         detailScore +
-        densityScore +
-        decoratedFishBonus
+        densityScore
       );
+      // A horizontal closed body is not enough: a fish needs a clear tail silhouette.
+      const total = tailStrong ? rawTotal : Math.min(rawTotal, 68);
 
       const breakdown = [];
       if (total >= PASS_SCORE) {
@@ -2122,8 +2465,59 @@
       els.heartCount.textContent = state.fish.reduce((sum, fish) => sum + fish.hearts, 0);
       els.emptyTank.hidden = state.fish.length > 0;
       renderLeaderboard();
+      renderDanmaku();
       renderMaintenance();
       if (els.myFishModal.classList.contains("open")) renderMyFish();
+    }
+
+    function renderDanmaku() {
+      const messages = [...(state.messages || [])]
+        .filter((message) => message.createdAt >= danmakuOpenedAt)
+        .sort((a, b) => b.createdAt - a.createdAt);
+      els.danmakuList.replaceChildren();
+      if (!messages.length) {
+        const empty = document.createElement("div");
+        empty.className = "danmaku-message";
+        empty.textContent = "还没有弹幕，来发第一条吧";
+        els.danmakuList.appendChild(empty);
+        return;
+      }
+      messages.forEach((message) => {
+        const row = document.createElement("div");
+        row.className = "danmaku-message";
+        row.textContent = `${message.name}：${message.content}`;
+        els.danmakuList.appendChild(row);
+      });
+    }
+
+    async function sendDanmaku(event) {
+      event.preventDefault();
+      const content = els.danmakuInput.value.trim().replace(/\s+/g, " ");
+      if (!content) return;
+      const message = {
+        id: `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        name: danmakuName,
+        content: content.slice(0, 80),
+        sessionId: danmakuSessionId,
+        createdAt: Date.now()
+      };
+      els.danmakuInput.value = "";
+      els.danmakuSendBtn.disabled = true;
+      state.messages = [message, ...(state.messages || [])];
+      renderDanmaku();
+      try {
+        if (SHARED_MODE) {
+          const response = await apiRequest("/api/messages", { method: "POST", body: message });
+          state.messages = (state.messages || []).filter((item) => item.id !== message.id);
+          state.messages.unshift(normalizeMessage(response.message));
+        }
+      } catch (error) {
+        state.messages = (state.messages || []).filter((item) => item.id !== message.id);
+        showToast(error.message || "弹幕发送失败，请稍后再试");
+      } finally {
+        els.danmakuSendBtn.disabled = false;
+        renderDanmaku();
+      }
     }
 
     function openMyFishModal() {
@@ -2934,24 +3328,38 @@
     async function likeFish(id, burstX, burstY) {
       const fish = state.fish.find((item) => item.id === id);
       if (!fish) return;
-      try {
-        if (SHARED_MODE) {
-          const response = await apiRequest(`/api/fish/${encodeURIComponent(id)}/like`, { method: "POST" });
-          fish.hearts = response.fish.hearts;
-          fish.canDelete = response.fish.canDelete;
-          fish.isMine = response.fish.isMine;
-        } else {
-          fish.hearts += 1;
-        }
-      } catch (error) {
-        showToast(error.message || "点赞失败，请稍后重试");
-        return;
-      }
+      const pending = (pendingLikes.get(id) || 0) + 1;
+      pendingLikes.set(id, pending);
+      fish.hearts += 1;
       likeBurst = {
         x: burstX || els.tankCanvas.getBoundingClientRect().width - 48,
         y: burstY || 76,
         started: performance.now()
       };
+      renderAll();
+      try {
+        if (SHARED_MODE) {
+          const response = await apiRequest(`/api/fish/${encodeURIComponent(id)}/like`, { method: "POST" });
+          const current = state.fish.find((item) => item.id === id);
+          const remaining = Math.max(0, (pendingLikes.get(id) || 1) - 1);
+          if (remaining) pendingLikes.set(id, remaining);
+          else pendingLikes.delete(id);
+          if (current) {
+            current.hearts = response.fish.hearts + remaining;
+            current.canDelete = response.fish.canDelete;
+            current.isMine = response.fish.isMine;
+          }
+        } else {
+          pendingLikes.delete(id);
+        }
+      } catch (error) {
+        const current = state.fish.find((item) => item.id === id);
+        const remaining = Math.max(0, (pendingLikes.get(id) || 1) - 1);
+        if (remaining) pendingLikes.set(id, remaining);
+        else pendingLikes.delete(id);
+        if (current) current.hearts = Math.max(0, current.hearts - 1);
+        showToast(error.message || "点赞失败，请稍后重试");
+      }
       saveState();
       renderAll();
     }
@@ -3016,7 +3424,8 @@
         return {
           ...structuredClone(defaultState),
           ...parsed,
-          fish: Array.isArray(parsed.fish) ? parsed.fish.map(normalizeFish).filter(Boolean) : []
+          fish: Array.isArray(parsed.fish) ? parsed.fish.map(normalizeFish).filter(Boolean) : [],
+          messages: Array.isArray(parsed.messages) ? parsed.messages.map(normalizeMessage).filter(Boolean) : []
         };
       } catch {
         return structuredClone(defaultState);
@@ -3030,6 +3439,30 @@
         localStorage.setItem(CLIENT_ID_KEY, id);
       }
       return id;
+    }
+
+    function getRandomDanmakuName() {
+      const words = [
+        "苹果", "跑步机", "老虎", "月亮", "火箭", "海盐", "向日葵", "柠檬", "草莓", "西瓜",
+        "鲸鱼", "海豚", "章鱼", "熊猫", "松鼠", "长颈鹿", "小马", "海豹", "孔雀", "蜗牛",
+        "云朵", "彩虹", "星星", "露珠", "晚风", "雪花", "闪电", "海浪", "森林", "沙丘",
+        "书包", "铅笔", "相机", "唱片", "吉他", "风筝", "积木", "茶杯", "闹钟", "雨伞",
+        "面包", "布丁", "奶茶", "寿司", "番茄", "蘑菇", "玉米", "饼干", "棉花糖", "冰淇淋",
+        "宇航员", "侦探", "园丁", "画家", "厨师", "魔术师", "灯塔", "邮票", "电车", "望远镜",
+        "薄荷", "琥珀", "珊瑚", "榛子", "葡萄", "芒果", "樱桃", "桂花", "鸢尾", "银杏"
+      ];
+      return `${words[Math.floor(Math.random() * words.length)]}${words[Math.floor(Math.random() * words.length)]}`;
+    }
+
+    function normalizeMessage(message) {
+      if (!message || !String(message.content || "").trim()) return null;
+      return {
+        id: String(message.id || `${Date.now()}-${Math.random()}`),
+        name: String(message.name || "匿名鱼友").trim().slice(0, 32),
+        content: String(message.content).trim().slice(0, 80),
+        sessionId: String(message.sessionId || "").slice(0, 120),
+        createdAt: Number(message.createdAt) || Date.now()
+      };
     }
 
     function normalizeFish(fish) {
@@ -3106,7 +3539,15 @@
       syncInFlight = true;
       try {
         const response = await apiRequest("/api/state");
-        state.fish = Array.isArray(response.fish) ? response.fish.map(normalizeFish).filter(Boolean) : [];
+        state.fish = Array.isArray(response.fish)
+          ? response.fish.map(normalizeFish).filter(Boolean).map((fish) => ({
+            ...fish,
+            hearts: fish.hearts + (pendingLikes.get(fish.id) || 0)
+          }))
+          : [];
+        state.messages = Array.isArray(response.messages)
+          ? response.messages.map(normalizeMessage).filter(Boolean)
+          : [];
         state.lastCleanupAt = Date.now();
         renderAll();
       } catch (error) {
