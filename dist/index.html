@@ -965,6 +965,33 @@
       font-size: 13px;
     }
 
+    .admin-fish-row {
+      grid-template-columns: 20px 64px minmax(0, 1fr) auto;
+    }
+
+    .admin-fish-check {
+      width: 16px;
+      height: 16px;
+      accent-color: #2d7a69;
+    }
+
+    .admin-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .admin-actions button {
+      min-height: 32px;
+      padding: 4px 9px;
+      font-size: 13px;
+    }
+
+    .admin-danger {
+      border-color: rgba(205, 67, 67, 0.44);
+      color: #b83b3b;
+    }
+
     .intro-copy {
       display: grid;
       gap: 10px;
@@ -1322,7 +1349,7 @@
             <div class="danmaku-list" id="danmakuList" aria-live="polite"></div>
             <button class="new-messages-btn" id="newMessagesBtn" type="button" hidden>新消息</button>
             <form class="danmaku-form" id="danmakuForm">
-              <input class="danmaku-input" id="danmakuInput" maxlength="80" autocomplete="off" placeholder="说点什么吧">
+              <input class="danmaku-input" id="danmakuInput" maxlength="30" autocomplete="off" placeholder="说点什么吧">
               <button class="danmaku-send" id="danmakuSendBtn" type="submit">发送</button>
             </form>
           </section>
@@ -1398,6 +1425,11 @@
           <input id="adminThreshold" type="range" min="60" max="95" value="75">
         </div>
         <button class="submit-btn" id="saveAdminSettingsBtn" type="button">保存质检门槛</button>
+        <div class="admin-actions">
+          <button id="selectAllAdminFishBtn" type="button">全选鱼苗</button>
+          <button class="admin-danger" id="deleteSelectedFishBtn" type="button">批量删除</button>
+          <button class="admin-danger" id="clearDanmakuBtn" type="button">清空弹幕</button>
+        </div>
         <p class="my-fish-summary">点击删除可移出任意鱼苗</p>
         <div class="my-fish-list" id="adminFishList"></div>
       </div>
@@ -1582,6 +1614,9 @@
       adminThreshold: document.getElementById("adminThreshold"),
       adminThresholdValue: document.getElementById("adminThresholdValue"),
       saveAdminSettingsBtn: document.getElementById("saveAdminSettingsBtn"),
+      selectAllAdminFishBtn: document.getElementById("selectAllAdminFishBtn"),
+      deleteSelectedFishBtn: document.getElementById("deleteSelectedFishBtn"),
+      clearDanmakuBtn: document.getElementById("clearDanmakuBtn"),
       adminFishList: document.getElementById("adminFishList"),
       myFishModal: document.getElementById("myFishModal"),
       closeMyFishBtn: document.getElementById("closeMyFishBtn"),
@@ -1646,6 +1681,7 @@
     let passScore = PASS_SCORE;
     let adminPassword = "";
     let isAdmin = false;
+    const selectedAdminFishIds = new Set();
     let currentBreakdown = [];
     let pendingFishImage = null;
     let pendingFacing = 1;
@@ -1704,6 +1740,9 @@
       els.closeAdminBtn.addEventListener("click", closeAdminModal);
       els.adminLoginBtn.addEventListener("click", loginAdmin);
       els.saveAdminSettingsBtn.addEventListener("click", saveAdminSettings);
+      els.selectAllAdminFishBtn.addEventListener("click", toggleSelectAllAdminFish);
+      els.deleteSelectedFishBtn.addEventListener("click", deleteSelectedAdminFish);
+      els.clearDanmakuBtn.addEventListener("click", clearDanmakuAsAdmin);
       els.adminThreshold.addEventListener("input", updateAdminThresholdLabel);
       els.myFishModal.addEventListener("click", (event) => {
         if (event.target === els.myFishModal) closeMyFishModal();
@@ -2640,8 +2679,8 @@
       if (!content) return;
       const message = {
         id: `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        name: danmakuName,
-        content: content.slice(0, 80),
+        name: isAdmin ? "管理员-v" : danmakuName,
+        content: content.slice(0, 30),
         sessionId: danmakuSessionId,
         createdAt: Date.now()
       };
@@ -2673,20 +2712,15 @@
     function openAdminModal() {
       els.adminError.textContent = "";
       els.adminPassword.value = "";
-      isAdmin = false;
-      adminPassword = "";
-      els.adminLoginPanel.hidden = false;
-      els.adminPanel.hidden = true;
+      els.adminLoginPanel.hidden = isAdmin;
+      els.adminPanel.hidden = !isAdmin;
+      if (isAdmin) renderAdminPanel();
       els.adminModal.classList.add("open");
-      els.adminPassword.focus();
+      if (!isAdmin) els.adminPassword.focus();
     }
 
     function closeAdminModal() {
-      isAdmin = false;
-      adminPassword = "";
       els.adminPassword.value = "";
-      els.adminPanel.hidden = true;
-      els.adminLoginPanel.hidden = false;
       els.adminModal.classList.remove("open");
     }
 
@@ -2721,7 +2755,15 @@
       els.adminFishList.replaceChildren();
       [...state.fish].sort((a, b) => b.createdAt - a.createdAt).forEach((fish) => {
         const row = document.createElement("div");
-        row.className = "my-fish-row";
+        row.className = "my-fish-row admin-fish-row";
+        const checkbox = document.createElement("input");
+        checkbox.className = "admin-fish-check";
+        checkbox.type = "checkbox";
+        checkbox.checked = selectedAdminFishIds.has(fish.id);
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) selectedAdminFishIds.add(fish.id);
+          else selectedAdminFishIds.delete(fish.id);
+        });
         const thumb = document.createElement("img");
         thumb.className = "my-fish-thumb";
         thumb.src = fish.src;
@@ -2740,9 +2782,12 @@
         remove.type = "button";
         remove.textContent = "删除";
         remove.addEventListener("click", () => deleteAdminFish(fish.id));
-        row.append(thumb, info, remove);
+        row.append(checkbox, thumb, info, remove);
         els.adminFishList.appendChild(row);
       });
+      els.selectAllAdminFishBtn.textContent = selectedAdminFishIds.size === state.fish.length && state.fish.length
+        ? "取消全选"
+        : "全选鱼苗";
     }
 
     async function saveAdminSettings() {
@@ -2765,10 +2810,52 @@
       try {
         await apiRequest(`/api/fish/${encodeURIComponent(id)}`, { method: "DELETE", adminPassword });
         state.fish = state.fish.filter((fish) => fish.id !== id);
+        selectedAdminFishIds.delete(id);
         renderAll();
         renderAdminPanel();
       } catch (error) {
         showToast(error.message || "删除失败");
+      }
+    }
+
+    function toggleSelectAllAdminFish() {
+      if (selectedAdminFishIds.size === state.fish.length && state.fish.length) {
+        selectedAdminFishIds.clear();
+      } else {
+        state.fish.forEach((fish) => selectedAdminFishIds.add(fish.id));
+      }
+      renderAdminPanel();
+    }
+
+    async function deleteSelectedAdminFish() {
+      const ids = [...selectedAdminFishIds];
+      if (!ids.length) {
+        showToast("请先选择要删除的鱼苗");
+        return;
+      }
+      if (!window.confirm(`确定删除选中的 ${ids.length} 条鱼苗吗？`)) return;
+      try {
+        await apiRequest("/api/admin/fish/delete-batch", { method: "POST", adminPassword, body: { ids } });
+        const removed = new Set(ids);
+        state.fish = state.fish.filter((fish) => !removed.has(fish.id));
+        selectedAdminFishIds.clear();
+        renderAll();
+        renderAdminPanel();
+      } catch (error) {
+        showToast(error.message || "批量删除失败");
+      }
+    }
+
+    async function clearDanmakuAsAdmin() {
+      if (!window.confirm("确定清空全部弹幕吗？")) return;
+      try {
+        await apiRequest("/api/admin/messages", { method: "DELETE", adminPassword });
+        state.messages = [];
+        renderedDanmakuIds.clear();
+        renderDanmaku();
+        showToast("弹幕已清空");
+      } catch (error) {
+        showToast(error.message || "清空弹幕失败");
       }
     }
 
@@ -3716,7 +3803,7 @@
       return {
         id: String(message.id || `${Date.now()}-${Math.random()}`),
         name: String(message.name || "匿名鱼友").trim().slice(0, 32),
-        content: String(message.content).trim().slice(0, 80),
+        content: String(message.content).trim().slice(0, 30),
         sessionId: String(message.sessionId || "").slice(0, 120),
         createdAt: Number(message.createdAt) || Date.now()
       };

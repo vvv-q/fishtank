@@ -5,8 +5,7 @@ const DELETE_WINDOW_MS = 3 * 60 * 1000;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const STORE_NAME = "our-sea-fish-tank";
 const STATE_KEY = "state";
-const MAX_MESSAGES = 160;
-const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_MESSAGES = 100;
 const DEFAULT_QUALITY_THRESHOLD = 75;
 
 function json(statusCode, payload) {
@@ -60,16 +59,15 @@ function cleanupExpiredFish(state) {
 }
 
 function cleanupMessages(messages) {
-  const cutoff = Date.now() - MESSAGE_RETENTION_MS;
   return (Array.isArray(messages) ? messages : [])
-    .filter((message) => Number(message.createdAt) >= cutoff && String(message.content || "").trim())
+    .filter((message) => String(message.content || "").trim())
     .sort((a, b) => Number(a.createdAt) - Number(b.createdAt))
     .slice(-MAX_MESSAGES);
 }
 
 function normalizeNewMessage(input) {
   const name = String(input.name || "").trim().slice(0, 32);
-  const content = String(input.content || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const content = String(input.content || "").trim().replace(/\s+/g, " ").slice(0, 30);
   const sessionId = String(input.sessionId || "").slice(0, 120);
   if (!name || !content || !sessionId) {
     throw Object.assign(new Error("弹幕内容无效"), { status: 400 });
@@ -178,6 +176,29 @@ exports.handler = async (event) => {
       state.qualityThreshold = getQualityThreshold(input.qualityThreshold);
       await store.setJSON(STATE_KEY, state);
       return json(200, { qualityThreshold: state.qualityThreshold });
+    }
+
+    if (event.httpMethod === "POST" && route === "/admin/fish/delete-batch") {
+      requireAdmin(event);
+      let input;
+      try {
+        input = JSON.parse(event.body || "{}");
+      } catch {
+        return json(400, { error: "删除格式无效" });
+      }
+      const ids = new Set((Array.isArray(input.ids) ? input.ids : []).map((id) => String(id)).slice(0, 100));
+      if (!ids.size) return json(400, { error: "请选择要删除的鱼苗" });
+      const before = state.fish.length;
+      state.fish = state.fish.filter((fish) => !ids.has(fish.id));
+      await store.setJSON(STATE_KEY, state);
+      return json(200, { removed: before - state.fish.length });
+    }
+
+    if (event.httpMethod === "DELETE" && route === "/admin/messages") {
+      requireAdmin(event);
+      state.messages = [];
+      await store.setJSON(STATE_KEY, state);
+      return json(200, { ok: true });
     }
 
     if (event.httpMethod === "POST" && route === "/messages") {

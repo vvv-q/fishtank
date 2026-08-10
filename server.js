@@ -9,8 +9,7 @@ const HOST = process.env.HOST || "0.0.0.0";
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "fish.json");
 const DELETE_WINDOW_MS = 3 * 60 * 1000;
-const MAX_MESSAGES = 160;
-const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_MESSAGES = 100;
 const DEFAULT_QUALITY_THRESHOLD = 75;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const PUBLIC_EXTENSIONS = new Set([".html", ".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".ttf", ".woff2", ".txt"]);
@@ -45,9 +44,8 @@ function readDatabase() {
 }
 
 function cleanupMessages(messages) {
-  const cutoff = Date.now() - MESSAGE_RETENTION_MS;
   return (Array.isArray(messages) ? messages : [])
-    .filter((message) => Number(message.createdAt) >= cutoff && String(message.content || "").trim())
+    .filter((message) => String(message.content || "").trim())
     .sort((a, b) => Number(a.createdAt) - Number(b.createdAt))
     .slice(-MAX_MESSAGES);
 }
@@ -170,7 +168,7 @@ function normalizeNewFish(input, ownerId) {
 
 function normalizeNewMessage(input) {
   const name = String(input.name || "").trim().slice(0, 32);
-  const content = String(input.content || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const content = String(input.content || "").trim().replace(/\s+/g, " ").slice(0, 30);
   const sessionId = String(input.sessionId || "").slice(0, 120);
   if (!name || !content || !sessionId) throw Object.assign(new Error("弹幕内容无效"), { status: 400 });
   return { id: crypto.randomUUID(), name, content, sessionId, createdAt: Date.now() };
@@ -201,6 +199,26 @@ async function handleApi(request, response, url) {
     database.qualityThreshold = getQualityThreshold((await readJson(request)).qualityThreshold);
     persistDatabase();
     sendJson(response, 200, { qualityThreshold: database.qualityThreshold });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/admin/fish/delete-batch") {
+    if (!isAdmin(request)) throw Object.assign(new Error("管理员验证失败"), { status: 401 });
+    const input = await readJson(request);
+    const ids = new Set((Array.isArray(input.ids) ? input.ids : []).map((id) => String(id)).slice(0, 100));
+    if (!ids.size) throw Object.assign(new Error("请选择要删除的鱼苗"), { status: 400 });
+    const before = database.fish.length;
+    database.fish = database.fish.filter((fish) => !ids.has(fish.id));
+    persistDatabase();
+    sendJson(response, 200, { removed: before - database.fish.length });
+    return;
+  }
+
+  if (request.method === "DELETE" && url.pathname === "/api/admin/messages") {
+    if (!isAdmin(request)) throw Object.assign(new Error("管理员验证失败"), { status: 401 });
+    database.messages = [];
+    persistDatabase();
+    sendJson(response, 200, { ok: true });
     return;
   }
 
