@@ -136,7 +136,9 @@ function getRoute(event) {
 exports.handler = async (event) => {
   try {
     connectLambda(event);
-    const store = getStore({ name: STORE_NAME, consistency: "strong" });
+    // Some Netlify projects do not expose the uncached edge endpoint required by strong reads.
+    // The default Blob read mode works in both standard Functions and deployed sites.
+    const store = getStore({ name: STORE_NAME });
     const stored = await store.get(STATE_KEY, { type: "json" });
     let state = {
       fish: Array.isArray(stored?.fish) ? stored.fish : [],
