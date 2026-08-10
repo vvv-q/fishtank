@@ -80,6 +80,16 @@ function normalizeNewFish(input, ownerId, state) {
   };
 }
 
+function getRoute(event) {
+  let path = event.queryStringParameters?.path;
+  if (!path) {
+    path = event.path || "";
+    if (!path && event.rawUrl) path = new URL(event.rawUrl).pathname;
+    path = String(path).replace(/^\/(?:\.netlify\/functions\/api|api)/, "");
+  }
+  return `/${decodeURIComponent(String(path || "").split("?")[0]).replace(/^\/+/, "")}`;
+}
+
 exports.handler = async (event) => {
   try {
     connectLambda(event);
@@ -89,7 +99,7 @@ exports.handler = async (event) => {
     const cleaned = cleanupExpiredFish(state);
     state = { fish: cleaned.fish };
     const clientId = getClientId(event);
-    const route = `/${String(event.queryStringParameters?.path || "").replace(/^\/+/, "")}`;
+    const route = getRoute(event);
 
     if (cleaned.changed) await store.setJSON(STATE_KEY, state);
 
