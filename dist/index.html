@@ -2027,6 +2027,12 @@
       const detailScore = Math.min(1, Math.max(0, detailComponents - 1) / 2) * 8;
       const structureDensity = occupiedCells / (gridWidth * gridHeight);
       const densityScore = scorePeak(structureDensity, 0.045, 0.16, 0.42) * 7;
+      const decoratedFishBonus = bodyScore >= 15 &&
+        outlineScore >= 12 &&
+        tailScore >= 9 &&
+        detailScore >= 6
+        ? 5
+        : 0;
 
       const total = Math.round(
         aspectScore +
@@ -2035,7 +2041,8 @@
         outlineScore +
         symmetryScore +
         detailScore +
-        densityScore
+        densityScore +
+        decoratedFishBonus
       );
 
       const breakdown = [];
