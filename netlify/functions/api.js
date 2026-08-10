@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { getStore } = require("@netlify/blobs");
+const { connectLambda, getStore } = require("@netlify/blobs");
 
 const DELETE_WINDOW_MS = 3 * 60 * 1000;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
@@ -82,6 +82,7 @@ function normalizeNewFish(input, ownerId, state) {
 
 exports.handler = async (event) => {
   try {
+    connectLambda(event);
     const store = getStore(STORE_NAME);
     const stored = await store.get(STATE_KEY, { type: "json" });
     let state = { fish: Array.isArray(stored?.fish) ? stored.fish : [] };
