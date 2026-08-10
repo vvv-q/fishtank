@@ -1480,7 +1480,7 @@
         </section>
 
         <section class="maintenance" aria-label="鱼缸维护">
-          <strong>自动清理</strong>
+          <strong>自动放生</strong>
           <span id="cleanupText">超过 8 个月的鱼会被移出鱼缸</span>
           <span id="lastCleanupText">本次打开已检查</span>
         </section>
@@ -1509,8 +1509,9 @@
       <div class="intro-copy">
         <p>画出你想要的小鱼，提交质检达到 75% 后，就可以为它取名并放入鱼缸。</p>
         <p>你可以通过点击鱼缸里的小鱼给别人的小鱼送上爱心❤</p>
-        <p>八个月前加入的小鱼会被自动清理哦~</p>
-        <p class="intro-reminder">您加入的鱼苗可以在三分钟内进行删除。</p>
+        <p>八个月前加入的小鱼会被系统自动放生哦~</p>
+        <p class="intro-reminder">！！需要先登录账号再进行操作</p>
+        <p class="intro-reminder">“我的鱼苗”中可以选择放生自己的鱼。</p>
       </div>
       <button class="submit-btn intro-action" id="closeIntroBtn" type="button">我知道了</button>
     </div>
@@ -1522,7 +1523,7 @@
         <h2>我的鱼苗</h2>
         <button class="icon-btn" id="closeMyFishBtn" type="button" title="关闭">×</button>
       </div>
-      <p class="my-fish-summary" id="myFishSummary">三分钟内添加的鱼苗可以删除</p>
+      <p class="my-fish-summary" id="myFishSummary"></p>
       <div class="my-fish-list" id="myFishList"></div>
     </div>
   </section>
@@ -1544,10 +1545,10 @@
       <div class="form-stack" id="adminPanel" hidden>
         <div class="admin-actions">
           <button id="selectAllAdminFishBtn" type="button">全选鱼苗</button>
-          <button class="admin-danger" id="deleteSelectedFishBtn" type="button">批量删除</button>
+          <button class="admin-danger" id="deleteSelectedFishBtn" type="button">批量放生</button>
           <button id="exitAdminModeBtn" type="button">退出管理</button>
         </div>
-        <p class="my-fish-summary">点击删除可移出任意鱼苗</p>
+        <p class="my-fish-summary">可放生任意鱼苗</p>
         <div class="my-fish-list" id="adminFishList"></div>
       </div>
     </div>
@@ -1653,7 +1654,7 @@
           <div class="form-stack">
             <div class="score-box result-box" id="resultBox">
               <div class="score-line">
-                <span>像鱼相似度</span>
+                <span>海洋生物相似度</span>
                 <strong id="scoreText">0%</strong>
               </div>
               <div class="meter" aria-label="像鱼相似度">
@@ -1683,7 +1684,6 @@
     const DRAFTS_KEY = "shared-fish-tank-drafts-v2";
     const LEGACY_DRAFT_KEY = "shared-fish-tank-draft-v1";
     const MAX_DRAFTS = 5;
-    const DELETE_WINDOW_MS = 3 * 60 * 1000;
     const DRAW_WIDTH = 1000;
     const DRAW_HEIGHT = 450;
     const PASS_SCORE = 75;
@@ -1801,6 +1801,7 @@
     let activeColor = "#17201d";
     let canvasZoom = 1;
     let isDrawing = false;
+    let drawingMatchesSavedDraft = false;
     let lastPoint = null;
     let lastRawPoint = null;
     let undoStack = [];
@@ -1973,10 +1974,14 @@
     function startDrawing(event) {
       event.preventDefault();
       if (tool === "fill") {
-        if (fillClosedArea(getDrawPoint(event))) resetSubmission(false);
+        if (fillClosedArea(getDrawPoint(event))) {
+          drawingMatchesSavedDraft = false;
+          resetSubmission(false);
+        }
         return;
       }
       saveUndo();
+      drawingMatchesSavedDraft = false;
       resetSubmission(false);
       isDrawing = true;
       lastPoint = getDrawPoint(event);
@@ -2132,12 +2137,14 @@
       drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
       drawCtx.putImageData(previous, 0, 0);
       els.undoBtn.disabled = undoStack.length === 0;
+      drawingMatchesSavedDraft = false;
       resetSubmission(false);
     }
 
     function clearDrawing() {
       saveUndo();
       drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      drawingMatchesSavedDraft = false;
       resetSubmission();
     }
 
@@ -2196,6 +2203,7 @@
       try {
         drafts.push(createDraft());
         persistDrafts(drafts);
+        drawingMatchesSavedDraft = true;
         updateDraftAvailability();
         showToast("草稿已保存，可以在草稿箱中恢复");
         afterSave?.();
@@ -2271,6 +2279,7 @@
         saveUndo();
         drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
         drawCtx.drawImage(image, 0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+        drawingMatchesSavedDraft = true;
         resetSubmission();
         const savedTime = new Date(draft.savedAt || Date.now()).toLocaleString("zh-CN", { hour12: false });
         closeDraftModal();
@@ -2351,7 +2360,9 @@
     }
 
     function requestCloseFishModal() {
-      if (!hasDrawing()) {
+      if (!hasDrawing() || drawingMatchesSavedDraft) {
+        if (hasDrawing()) clearCanvasWithoutUndo();
+        resetSubmission();
         closeFishModal();
         return;
       }
@@ -2514,6 +2525,7 @@
 
     function clearCanvasWithoutUndo() {
       drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      drawingMatchesSavedDraft = false;
       undoStack = [];
       els.undoBtn.disabled = true;
     }
@@ -2644,6 +2656,7 @@
       let enclosed = 0;
       let occupiedCells = 0;
       let detailComponents = 0;
+      const components = [];
       const inkVisited = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(false));
       for (let y = 0; y < gridHeight; y += 1) {
         for (let x = 0; x < gridWidth; x += 1) {
@@ -2653,9 +2666,19 @@
           if (inkVisited[y][x]) continue;
           detailComponents += 1;
           const component = [[x, y]];
+          let componentSize = 0;
+          let componentMinX = x;
+          let componentMaxX = x;
+          let componentMinY = y;
+          let componentMaxY = y;
           inkVisited[y][x] = true;
           while (component.length) {
             const [cx, cy] = component.pop();
+            componentSize += 1;
+            componentMinX = Math.min(componentMinX, cx);
+            componentMaxX = Math.max(componentMaxX, cx);
+            componentMinY = Math.min(componentMinY, cy);
+            componentMaxY = Math.max(componentMaxY, cy);
             [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => {
               const nx = cx + dx;
               const ny = cy + dy;
@@ -2665,6 +2688,11 @@
               }
             });
           }
+          components.push({
+            size: componentSize,
+            centerX: (componentMinX + componentMaxX) / 2,
+            centerY: (componentMinY + componentMaxY) / 2
+          });
         }
       }
 
@@ -2678,17 +2706,55 @@
       const detailScore = Math.min(1, Math.max(0, detailComponents - 1) / 2) * 4;
       const structureDensity = occupiedCells / (gridWidth * gridHeight);
       const densityScore = scorePeak(structureDensity, 0.045, 0.16, 0.42) * 7;
+      // A small isolated mark in the middle third is a reliable hand-drawn eye.
+      // Wheels normally sit below the body, so they do not satisfy this test.
+      const hasEye = components.some((component) => (
+        component.size <= Math.max(10, occupiedCells * 0.08) &&
+        component.centerY >= gridHeight * 0.2 &&
+        component.centerY <= gridHeight * 0.72 &&
+        (component.centerX <= gridWidth * 0.36 || component.centerX >= gridWidth * 0.64)
+      ));
+      const eyeScore = hasEye ? 12 : 0;
+      const directionalVariation = Math.max(leftVariation, rightVariation) /
+        Math.max(1, Math.min(leftVariation, rightVariation));
+      const closedBody = enclosed >= 58;
+      const roundedBodyScore = scorePeak(ratio, 0.52, 1.02, 2.25) * 15;
+      const longBodyScore = scorePeak(ratio, 0.88, 2.05, 4.8) * 15;
+      const marineBodyScore = Math.max(aspectScore, roundedBodyScore, longBodyScore);
+      const limbOrSegmentEvidence = tailScore >= 3 || directionalVariation >= 1.08 ||
+        tailArticulation >= 0.56 || detailComponents >= 3;
+      // The check accepts a family of simple marine creatures, not just a V-tailed fish.
+      // Each branch requires an eye plus an organic body and appendage/segment evidence.
+      const finnedSignature = hasEye && closedBody && aspectScore >= 7 && (
+        tailScore >= 3 || directionalVariation >= 1.08
+      );
+      const whaleSharkSignature = hasEye && closedBody && longBodyScore >= 8 && (
+        tailArticulation >= 0.42 || tailScore >= 2
+      );
+      const pufferSignature = hasEye && closedBody && roundedBodyScore >= 8 && (
+        tailArticulation >= 0.34 || detailComponents >= 2
+      );
+      const crabShrimpSignature = hasEye && marineBodyScore >= 6 && enclosed >= 22 && (
+        detailComponents >= 3 || tailArticulation >= 0.82 || directionalVariation >= 1.2
+      );
+      const marineSignature = finnedSignature || whaleSharkSignature || pufferSignature || crabShrimpSignature;
+      const typeBonus = marineSignature ? 12 : 0;
       const rawTotal = Math.round(
-        aspectScore +
+        marineBodyScore +
         bodyScore +
         tailScore +
         outlineScore +
         symmetryScore +
         detailScore +
-        densityScore
+        densityScore +
+        eyeScore +
+        typeBonus
       );
-      // A horizontal closed body is not enough: a fish needs a clear tail silhouette.
-      const total = tailStrong ? rawTotal : Math.min(rawTotal, 68);
+      // A horizontal shell alone is insufficient. A recognized marine profile receives
+      // a minimum passing score; a car-like body with wheels lacks the eye/appendage set.
+      const total = (tailStrong || marineSignature)
+        ? Math.max(rawTotal, marineSignature ? 76 : 0)
+        : Math.min(rawTotal, 68);
 
       const breakdown = [];
       if (total >= passScore) {
@@ -2898,13 +2964,45 @@
     async function submitAuth() {
       const username = els.authUsername.value.trim();
       const password = els.authPassword.value;
+      if (!username || !password) {
+        els.authError.textContent = "请输入账号和密码";
+        return;
+      }
+      els.authSubmitBtn.disabled = true;
+      els.authError.textContent = "";
       try {
-        if (authMode === "register") await apiRequest("/api/auth/register", { method: "POST", body: { username, password } });
-        await apiRequest("/api/auth/login", { method: "POST", body: {}, account: { username, password } });
+        const registering = authMode === "register";
+        if (registering) {
+          await apiRequest("/api/auth/register", { method: "POST", body: { username, password } });
+          // Blob reads can briefly lag behind a write. The local session is valid
+          // immediately; the retry verifies it once the account record is visible.
+          await loginAccountWithRetry(username, password);
+        } else {
+          await loginAccountWithRetry(username, password);
+        }
         accountSession = { username, password };
         els.loginBtn.textContent = username;
         els.authModal.classList.remove("open");
-      } catch (error) { els.authError.textContent = error.message || "登录失败"; }
+        showToast(registering ? "注册成功，已登录" : "登录成功");
+      } catch (error) {
+        els.authError.textContent = error.message || "登录失败";
+      } finally {
+        els.authSubmitBtn.disabled = false;
+      }
+    }
+
+    async function loginAccountWithRetry(username, password) {
+      let lastError;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        try {
+          return await apiRequest("/api/auth/login", { method: "POST", body: {}, account: { username, password } });
+        } catch (error) {
+          lastError = error;
+          if (error.status !== 401 || attempt === 3) throw error;
+          await new Promise((resolve) => window.setTimeout(resolve, 500 * (attempt + 1)));
+        }
+      }
+      throw lastError;
     }
 
     function openAdminModal() {
@@ -2975,7 +3073,7 @@
         const remove = document.createElement("button");
         remove.className = "my-fish-delete";
         remove.type = "button";
-        remove.textContent = "删除";
+        remove.textContent = "放生";
         remove.addEventListener("click", () => deleteAdminFish(fish.id));
         row.append(checkbox, thumb, info, remove);
         els.adminFishList.appendChild(row);
@@ -3027,7 +3125,7 @@
         renderAll();
         renderAdminPanel();
       } catch (error) {
-        showToast(error.message || "删除失败");
+        showToast(error.message || "放生失败");
       }
     }
 
@@ -3044,10 +3142,10 @@
       if (!adminPanelVerified) return;
       const ids = [...selectedAdminFishIds];
       if (!ids.length) {
-        showToast("请先选择要删除的鱼苗");
+        showToast("请先选择要放生的鱼苗");
         return;
       }
-      if (!window.confirm(`确定删除选中的 ${ids.length} 条鱼苗吗？`)) return;
+      if (!window.confirm(`确定放生选中的 ${ids.length} 条鱼苗吗？`)) return;
       try {
         await apiRequest("/api/admin/fish/delete-batch", { method: "POST", adminPassword, body: { ids } });
         const removed = new Set(ids);
@@ -3056,7 +3154,7 @@
         renderAll();
         renderAdminPanel();
       } catch (error) {
-        showToast(error.message || "批量删除失败");
+        showToast(error.message || "批量放生失败");
       }
     }
 
@@ -3107,15 +3205,15 @@
 
     function renderMyFish() {
       const owned = state.fish
-        .filter((fish) => isOwnFish(fish) && canDeleteFish(fish))
+        .filter((fish) => isOwnFish(fish))
         .sort((a, b) => b.createdAt - a.createdAt);
-      els.myFishSummary.textContent = `当前有 ${owned.length} 条鱼苗可以删除`;
+      els.myFishSummary.textContent = "";
       els.myFishList.innerHTML = "";
 
       if (!owned.length) {
         const empty = document.createElement("div");
         empty.className = "empty-list";
-        empty.textContent = "目前没有可删除的鱼苗";
+        empty.textContent = "还没有属于你的鱼苗";
         els.myFishList.appendChild(empty);
         return;
       }
@@ -3136,24 +3234,18 @@
         name.textContent = fish.name;
         const meta = document.createElement("div");
         meta.className = "my-fish-meta";
-        const remaining = Math.max(0, DELETE_WINDOW_MS - (Date.now() - fish.createdAt));
-        meta.textContent = `♥ ${fish.hearts} · 还可删除 ${formatRemainingTime(remaining)}`;
+        meta.textContent = `♥ ${fish.hearts}`;
         info.append(name, meta);
 
         const remove = document.createElement("button");
         remove.className = "my-fish-delete";
         remove.type = "button";
-        remove.textContent = "删除";
+        remove.textContent = "放生";
         remove.addEventListener("click", () => deleteOwnFish(fish.id));
 
         row.append(thumb, info, remove);
         els.myFishList.appendChild(row);
       });
-    }
-
-    function formatRemainingTime(milliseconds) {
-      const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
-      return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
     }
 
     function renderLeaderboard() {
@@ -3204,8 +3296,8 @@
           remove.className = "delete-btn";
           remove.type = "button";
           remove.textContent = "×";
-          remove.title = `删除 ${fish.name}`;
-          remove.setAttribute("aria-label", `删除 ${fish.name}`);
+          remove.title = `放生 ${fish.name}`;
+          remove.setAttribute("aria-label", `放生 ${fish.name}`);
           remove.addEventListener("click", () => deleteOwnFish(fish.id));
           actions.appendChild(remove);
         }
@@ -3219,8 +3311,8 @@
       const cutoff = new Date(getEightMonthCutoff());
       const next = new Date();
       next.setMonth(next.getMonth() + 8);
-      els.cleanupText.textContent = `${cutoff.toLocaleDateString("zh-CN")} 之前提交的鱼会被自动移出`;
-      const removed = state.lastRemovedCount ? `，移出 ${state.lastRemovedCount} 条` : "";
+      els.cleanupText.textContent = `${cutoff.toLocaleDateString("zh-CN")} 之前提交的鱼会被系统自动放生`;
+      const removed = state.lastRemovedCount ? `，已放生 ${state.lastRemovedCount} 条` : "";
       els.lastCleanupText.textContent = `本次检查：${new Date(state.lastCleanupAt || Date.now()).toLocaleString("zh-CN", { hour12: false })}${removed}`;
     }
 
@@ -3883,14 +3975,14 @@
       const fish = state.fish.find((item) => item.id === id);
       if (!fish) return;
       if (!canDeleteFish(fish)) {
-        showToast("只有自己三分钟内画的鱼可以删除");
+        showToast("只能放生自己的鱼苗");
         renderAll();
         return;
       }
       try {
         if (SHARED_MODE) await apiRequest(`/api/fish/${encodeURIComponent(id)}`, { method: "DELETE" });
       } catch (error) {
-        showToast(error.message || "删除失败，请稍后重试");
+        showToast(error.message || "放生失败，请稍后重试");
         await syncSharedState();
         return;
       }
@@ -3898,12 +3990,16 @@
       dropAnimations.delete(id);
       saveState();
       renderAll();
-      showToast(`${fish.name} 已移出鱼缸`);
+      showToast(`${fish.name} 已放生`);
     }
 
     async function likeFish(id, burstX, burstY) {
       const fish = state.fish.find((item) => item.id === id);
       if (!fish) return;
+      if (isOwnFish(fish)) {
+        showToast("不能给自己的鱼点赞哦");
+        return;
+      }
       const pending = (pendingLikes.get(id) || 0) + 1;
       pendingLikes.set(id, pending);
       fish.hearts += 1;

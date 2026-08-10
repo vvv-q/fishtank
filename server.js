@@ -8,7 +8,6 @@ const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "fish.json");
-const DELETE_WINDOW_MS = 3 * 60 * 1000;
 const MAX_MESSAGES = 100;
 const DEFAULT_QUALITY_THRESHOLD = 75;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
@@ -36,10 +35,11 @@ function readDatabase() {
     return {
       fish: Array.isArray(parsed.fish) ? parsed.fish : [],
       messages: cleanupMessages(parsed.messages),
+      accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
       qualityThreshold: getQualityThreshold(parsed.qualityThreshold)
     };
   } catch {
-    return { fish: [], messages: [], qualityThreshold: DEFAULT_QUALITY_THRESHOLD };
+    return { fish: [], messages: [], accounts: [], qualityThreshold: DEFAULT_QUALITY_THRESHOLD };
   }
 }
 
@@ -87,13 +87,29 @@ function getClientId(request) {
   return String(request.headers["x-client-id"] || "").slice(0, 120);
 }
 
-function presentFish(fish, clientId) {
+function getAccount(request) {
+  const username = String(request.headers["x-account-name"] || "").trim();
+  const password = String(request.headers["x-account-password"] || "");
+  const account = database.accounts.find((item) => item.username === username);
+  if (!account || !password || !/^[a-f0-9]{128}$/i.test(String(account.hash || ""))) return null;
+  const expected = Buffer.from(account.hash, "hex");
+  const actual = Buffer.from(crypto.scryptSync(password, account.salt, 64).toString("hex"), "hex");
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual) ? account : null;
+}
+
+function requireAccount(request) {
+  const account = getAccount(request);
+  if (!account) throw Object.assign(new Error("请先登录后再操作"), { status: 401 });
+  return account;
+}
+
+function presentFish(fish, clientId, account) {
   const { ownerId, ...publicFish } = fish;
-  const isMine = Boolean(clientId && ownerId === clientId);
+  const isMine = Boolean((account && ownerId === account.username) || (clientId && ownerId === clientId));
   return {
     ...publicFish,
     isMine,
-    canDelete: Boolean(isMine && Date.now() - fish.createdAt <= DELETE_WINDOW_MS)
+    canDelete: isMine
   };
 }
 
@@ -179,8 +195,9 @@ async function handleApi(request, response, url) {
   const clientId = getClientId(request);
 
   if (request.method === "GET" && url.pathname === "/api/state") {
+    const account = getAccount(request);
     sendJson(response, 200, {
-      fish: database.fish.map((fish) => presentFish(fish, clientId)),
+      fish: database.fish.map((fish) => presentFish(fish, clientId, account)),
       messages: database.messages,
       qualityThreshold: database.qualityThreshold,
       serverTime: Date.now()
@@ -206,7 +223,7 @@ async function handleApi(request, response, url) {
     if (!isAdmin(request)) throw Object.assign(new Error("管理员验证失败"), { status: 401 });
     const input = await readJson(request);
     const ids = new Set((Array.isArray(input.ids) ? input.ids : []).map((id) => String(id)).slice(0, 100));
-    if (!ids.size) throw Object.assign(new Error("请选择要删除的鱼苗"), { status: 400 });
+    if (!ids.size) throw Object.assign(new Error("请选择要放生的鱼苗"), { status: 400 });
     const before = database.fish.length;
     database.fish = database.fish.filter((fish) => !ids.has(fish.id));
     persistDatabase();
@@ -243,12 +260,37 @@ async function handleApi(request, response, url) {
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/api/auth/register") {
+    const input = await readJson(request);
+    const username = String(input.username || "").trim().slice(0, 18);
+    const password = String(input.password || "");
+    if (!/^[\w\u4e00-\u9fa5]{2,18}$/.test(username) || password.length < 6) {
+      throw Object.assign(new Error("用户名为 2-18 位，密码至少 6 位"), { status: 400 });
+    }
+    if (database.accounts.some((item) => item.username === username)) {
+      throw Object.assign(new Error("该账号已注册"), { status: 409 });
+    }
+    const salt = crypto.randomBytes(16).toString("hex");
+    database.accounts.push({ username, salt, hash: crypto.scryptSync(password, salt, 64).toString("hex") });
+    persistDatabase();
+    sendJson(response, 201, { username });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/auth/login") {
+    const account = requireAccount(request);
+    sendJson(response, 200, { username: account.username });
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/fish") {
     const input = await readJson(request);
-    const fish = normalizeNewFish(input, clientId);
+    const account = requireAccount(request);
+    const fish = normalizeNewFish(input, account.username);
+    fish.ownerAccount = account.username;
     database.fish.push(fish);
     persistDatabase();
-    sendJson(response, 201, { fish: presentFish(fish, clientId) });
+    sendJson(response, 201, { fish: presentFish(fish, clientId, account) });
     return;
   }
 
@@ -256,9 +298,13 @@ async function handleApi(request, response, url) {
   if (match && request.method === "POST" && match[2] === "like") {
     const fish = database.fish.find((item) => item.id === match[1]);
     if (!fish) throw Object.assign(new Error("这条小鱼已经不在鱼缸里了"), { status: 404 });
+    const account = getAccount(request);
+    if (account && fish.ownerId === account.username) {
+      throw Object.assign(new Error("\u4e0d\u80fd\u7ed9\u81ea\u5df1\u7684\u9c7c\u70b9\u8d5e\u54e6"), { status: 403 });
+    }
     fish.hearts = Math.max(0, Number(fish.hearts) || 0) + 1;
     persistDatabase();
-    sendJson(response, 200, { fish: presentFish(fish, clientId) });
+    sendJson(response, 200, { fish: presentFish(fish, clientId, account) });
     return;
   }
 
@@ -266,8 +312,9 @@ async function handleApi(request, response, url) {
     const index = database.fish.findIndex((item) => item.id === match[1]);
     if (index < 0) throw Object.assign(new Error("这条小鱼已经不在鱼缸里了"), { status: 404 });
     const fish = database.fish[index];
-    if (!isAdmin(request) && (!clientId || fish.ownerId !== clientId || Date.now() - fish.createdAt > DELETE_WINDOW_MS)) {
-      throw Object.assign(new Error("只有自己三分钟内画的鱼可以删除"), { status: 403 });
+    const account = getAccount(request);
+    if (!isAdmin(request) && (!account || fish.ownerId !== account.username)) {
+      throw Object.assign(new Error("只能放生自己的鱼苗"), { status: 403 });
     }
     database.fish.splice(index, 1);
     persistDatabase();

@@ -1,7 +1,6 @@
 const crypto = require("crypto");
 const { connectLambda, getStore } = require("@netlify/blobs");
 
-const DELETE_WINDOW_MS = 3 * 60 * 1000;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const STORE_NAME = "our-sea-fish-tank";
 const STATE_KEY = "state";
@@ -28,9 +27,10 @@ function getAccount(event, state) {
   const username = String(event.headers["x-account-name"] || "").trim();
   const password = String(event.headers["x-account-password"] || "");
   const account = (state.accounts || []).find((item) => item.username === username);
-  if (!account || !password) return null;
+  if (!account || !password || !/^[a-f0-9]{128}$/i.test(String(account.hash || ""))) return null;
   const hash = crypto.scryptSync(password, account.salt, 64).toString("hex");
-  return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(account.hash, "hex")) ? account : null;
+  const actual = Buffer.from(account.hash, "hex");
+  return actual.length === 64 && crypto.timingSafeEqual(Buffer.from(hash, "hex"), actual) ? account : null;
 }
 
 function requireAccount(event, state) {
@@ -204,7 +204,7 @@ exports.handler = async (event) => {
         return json(400, { error: "删除格式无效" });
       }
       const ids = new Set((Array.isArray(input.ids) ? input.ids : []).map((id) => String(id)).slice(0, 100));
-      if (!ids.size) return json(400, { error: "请选择要删除的鱼苗" });
+      if (!ids.size) return json(400, { error: "请选择要放生的鱼苗" });
       const before = state.fish.length;
       state.fish = state.fish.filter((fish) => !ids.has(fish.id));
       await store.setJSON(STATE_KEY, state);
@@ -286,9 +286,13 @@ exports.handler = async (event) => {
     if (match && event.httpMethod === "POST" && match[2] === "like") {
       const fish = state.fish.find((item) => item.id === decodeURIComponent(match[1]));
       if (!fish) return json(404, { error: "这条小鱼已经不在鱼缸里了" });
+      const account = getAccount(event, state);
+      if (account && fish.ownerId === account.username) {
+        return json(403, { error: "\u4e0d\u80fd\u7ed9\u81ea\u5df1\u7684\u9c7c\u70b9\u8d5e\u54e6" });
+      }
       fish.hearts = Math.max(0, Number(fish.hearts) || 0) + 1;
       await store.setJSON(STATE_KEY, state);
-      return json(200, { fish: presentFish(fish, clientId) });
+      return json(200, { fish: presentFish(fish, clientId, account) });
     }
 
     if (match && event.httpMethod === "DELETE" && !match[2]) {
@@ -298,7 +302,7 @@ exports.handler = async (event) => {
       const fish = state.fish[index];
       const account = getAccount(event, state);
       if (!isAdmin(event) && (!account || fish.ownerId !== account.username)) {
-        return json(403, { error: "只有自己三分钟内画的鱼可以删除" });
+        return json(403, { error: "只能放生自己的鱼苗" });
       }
       state.fish.splice(index, 1);
       await store.setJSON(STATE_KEY, state);
