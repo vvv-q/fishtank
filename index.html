@@ -1588,6 +1588,7 @@
     let leaderFishId = null;
     let likeBurst = null;
     const pendingLikes = new Map();
+    const localDanmakuIds = new Set();
     let draftSaveAfterReplace = null;
     const dropAnimations = new Map();
     const MIN_CANVAS_ZOOM = 1;
@@ -2525,7 +2526,7 @@
     function renderDanmaku() {
       const messages = [...(state.messages || [])]
         .filter((message) => danmakuOpenedServerTime === null || message.createdAt >= danmakuOpenedServerTime)
-        .sort((a, b) => b.createdAt - a.createdAt);
+        .sort((a, b) => a.createdAt - b.createdAt);
       els.danmakuList.replaceChildren();
       if (!messages.length) {
         const empty = document.createElement("div");
@@ -2553,6 +2554,7 @@
         sessionId: danmakuSessionId,
         createdAt: Date.now()
       };
+      localDanmakuIds.add(message.id);
       els.danmakuInput.value = "";
       els.danmakuSendBtn.disabled = true;
       state.messages = [message, ...(state.messages || [])];
@@ -2561,10 +2563,14 @@
         if (SHARED_MODE) {
           const response = await apiRequest("/api/messages", { method: "POST", body: message });
           state.messages = (state.messages || []).filter((item) => item.id !== message.id);
-          state.messages.unshift(normalizeMessage(response.message));
+          localDanmakuIds.delete(message.id);
+          const savedMessage = normalizeMessage(response.message);
+          localDanmakuIds.add(savedMessage.id);
+          state.messages.unshift(savedMessage);
         }
       } catch (error) {
         state.messages = (state.messages || []).filter((item) => item.id !== message.id);
+        localDanmakuIds.delete(message.id);
         showToast(error.message || "弹幕发送失败，请稍后再试");
       } finally {
         els.danmakuSendBtn.disabled = false;
@@ -3591,15 +3597,17 @@
 
     function getRandomDanmakuName() {
       const words = [
-        "苹果", "跑步机", "老虎", "月亮", "火箭", "海盐", "向日葵", "柠檬", "草莓", "西瓜",
-        "鲸鱼", "海豚", "章鱼", "熊猫", "松鼠", "长颈鹿", "小马", "海豹", "孔雀", "蜗牛",
-        "云朵", "彩虹", "星星", "露珠", "晚风", "雪花", "闪电", "海浪", "森林", "沙丘",
-        "书包", "铅笔", "相机", "唱片", "吉他", "风筝", "积木", "茶杯", "闹钟", "雨伞",
-        "面包", "布丁", "奶茶", "寿司", "番茄", "蘑菇", "玉米", "饼干", "棉花糖", "冰淇淋",
-        "宇航员", "侦探", "园丁", "画家", "厨师", "魔术师", "灯塔", "邮票", "电车", "望远镜",
-        "薄荷", "琥珀", "珊瑚", "榛子", "葡萄", "芒果", "樱桃", "桂花", "鸢尾", "银杏"
+        "苹果", "梨", "西瓜", "草莓", "柠檬", "葡萄", "芒果", "橙子", "桃子", "樱桃",
+        "面包", "饼干", "布丁", "奶茶", "冰淇淋", "玉米", "番茄", "蘑菇", "寿司", "蛋糕",
+        "跑步机", "跑道", "自行车", "飞机", "火车", "地铁", "汽车", "电车", "轮船", "热气球",
+        "书包", "铅笔", "橡皮", "尺子", "相机", "闹钟", "茶杯", "雨伞", "风筝", "积木",
+        "台灯", "冰箱", "洗衣机", "吹风机", "电风扇", "望远镜", "吉他", "唱片", "盆栽", "枕头",
+        "老虎", "熊猫", "金渐层", "三花", "橘猫", "小狗", "兔子", "松鼠", "海豚", "鲸鱼",
+        "海豹", "企鹅", "长颈鹿", "小马", "孔雀", "刺猬", "蜗牛", "乌龟", "小羊", "狐狸",
+        "梨花", "桂花", "向日葵", "郁金香", "玫瑰", "薄荷", "银杏", "竹子", "云朵", "彩虹",
+        "月亮", "星星", "雪花", "海浪", "灯塔", "森林", "操场", "花园", "邮局", "车站"
       ];
-      return `${words[Math.floor(Math.random() * words.length)]}${words[Math.floor(Math.random() * words.length)]}`;
+      return words[Math.floor(Math.random() * words.length)];
     }
 
     function normalizeMessage(message) {
@@ -3694,9 +3702,15 @@
             hearts: fish.hearts + (pendingLikes.get(fish.id) || 0)
           }))
           : [];
-        state.messages = Array.isArray(response.messages)
+        const remoteMessages = Array.isArray(response.messages)
           ? response.messages.map(normalizeMessage).filter(Boolean)
           : [];
+        const remoteIds = new Set(remoteMessages.map((message) => message.id));
+        const awaitingMessages = (state.messages || []).filter((message) =>
+          localDanmakuIds.has(message.id) && !remoteIds.has(message.id)
+        );
+        remoteIds.forEach((id) => localDanmakuIds.delete(id));
+        state.messages = [...remoteMessages, ...awaitingMessages];
         if (danmakuOpenedServerTime === null) {
           danmakuOpenedServerTime = Number(response.serverTime) || Date.now();
         }
