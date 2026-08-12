@@ -95,8 +95,9 @@
       grid-template-columns: minmax(210px, 1fr) auto;
       align-items: center;
       gap: 18px;
-      height: 60px;
-      padding: 6px 18px;
+      box-sizing: border-box;
+      height: 52px;
+      padding: 4px 18px;
       border-bottom: 1px solid #9ebeb5;
       background:
         linear-gradient(90deg, rgba(37, 115, 91, 0.08), transparent 34%),
@@ -141,6 +142,29 @@
       min-width: 0;
     }
 
+    .guide-entry {
+      display: grid;
+      width: 22px;
+      height: 22px;
+      flex: 0 0 22px;
+      place-items: center;
+      border: 1px solid #aabbb3;
+      border-radius: 50%;
+      background: transparent;
+      color: #73827d;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .guide-entry:hover:not(:disabled) {
+      border-color: #6e958a;
+      background: #f5fbf8;
+      color: #245f54;
+    }
+
     .title-seal {
       display: grid;
       width: 32px;
@@ -181,16 +205,19 @@
       gap: 6px;
       flex-wrap: nowrap;
       min-width: 0;
+      height: 42px;
     }
 
     .status-item {
       flex: 0 0 auto;
       min-width: 88px;
+      height: 42px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 4px 10px;
       background: #fff;
       box-shadow: inset 0 3px 0 rgba(37, 115, 91, 0.08);
+      box-sizing: border-box;
     }
 
     .status-item span {
@@ -211,7 +238,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) 330px;
       gap: 0;
-      height: calc(100vh - 60px);
+      height: calc(100vh - 52px);
       min-height: 0;
       overflow: hidden;
     }
@@ -226,11 +253,11 @@
     }
 
     .primary-action {
-      min-height: 36px;
+      min-height: 30px;
       border-color: #276f62;
       background: #1f6a5c;
       color: #fff;
-      padding: 6px 10px;
+      padding: 4px 9px;
       font-size: 13px;
       font-weight: 700;
       white-space: nowrap;
@@ -243,8 +270,8 @@
     }
 
     .my-fish-action {
-      min-height: 36px;
-      padding: 6px 10px;
+      min-height: 30px;
+      padding: 4px 9px;
       border-color: #79a89c;
       background: #f7fbf9;
       color: #245f54;
@@ -321,6 +348,7 @@
       gap: 4px;
       min-height: 24px;
       width: 80%;
+      box-sizing: border-box;
       flex: 0 0 auto;
       overflow: visible;
       border: 1px solid rgba(103, 113, 113, 0.42);
@@ -340,7 +368,7 @@
 
     .danmaku-content {
       min-width: 0;
-      flex: 1 1 auto;
+      flex: 1 1 120px;
     }
 
     .danmaku-moderation {
@@ -370,15 +398,19 @@
     }
 
     .clear-danmaku-btn {
-      position: absolute;
-      top: -28px;
-      right: 0;
+      position: static;
     }
 
     .danmaku-batch-btn {
+      position: static;
+    }
+
+    .danmaku-admin-actions {
       position: absolute;
       right: 0;
-      bottom: 38px;
+      bottom: 39px;
+      display: flex;
+      gap: 4px;
     }
 
     .new-messages-btn {
@@ -599,8 +631,9 @@
     }
 
     .admin-entry {
-      width: 44px;
-      height: 36px;
+      width: 36px;
+      height: 30px;
+      align-self: center;
       border: 0;
       background: transparent;
       color: #d49a22;
@@ -618,7 +651,7 @@
 
     .admin-entry span {
       display: block;
-      transform: translateY(3px);
+      transform: none;
     }
 
     .tool-btn.active {
@@ -877,6 +910,69 @@
       border-radius: var(--radius);
       background: #fff;
       box-shadow: 0 24px 80px rgba(11, 28, 31, 0.3);
+    }
+
+    .guide-dialog {
+      width: min(700px, calc(100vw - 32px));
+      max-height: min(760px, calc(100vh - 32px));
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      border-radius: var(--radius);
+      background: #f8fffc;
+      box-shadow: 0 24px 80px rgba(4, 89, 103, 0.34);
+    }
+
+    .guide-content {
+      display: grid;
+      gap: 12px;
+      max-height: calc(min(760px, 100vh - 32px) - 55px);
+      overflow-y: auto;
+      padding: 16px;
+      color: #244b45;
+      scrollbar-color: #58cdb6 transparent;
+      scrollbar-width: thin;
+    }
+
+    .guide-section {
+      border: 1px solid #b7eadc;
+      border-left: 5px solid #19b997;
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .guide-section:nth-child(3n + 2) {
+      border-left-color: #f39c5a;
+      background: #fffdf7;
+    }
+
+    .guide-section:nth-child(3n) {
+      border-left-color: #46a9d2;
+      background: #f7fdff;
+    }
+
+    .guide-section h3 {
+      margin: 0 0 5px;
+      color: #087460;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .guide-section p {
+      margin: 4px 0;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .guide-formula {
+      margin-top: 8px !important;
+      border-radius: 4px;
+      padding: 7px 8px;
+      background: #dcfff4;
+      color: #075d4e;
+      font-family: Arial, sans-serif;
+      font-size: 13px !important;
+      font-weight: 700;
     }
 
     .draft-dialog {
@@ -1139,6 +1235,45 @@
     .admin-actions button {
       min-height: 32px;
       padding: 4px 9px;
+      font-size: 13px;
+    }
+
+    .admin-food-gift {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 82px auto;
+      gap: 7px;
+      align-items: center;
+      padding: 9px;
+      border: 1px solid #e7c780;
+      border-radius: var(--radius);
+      background: #fff9e8;
+    }
+
+    .admin-food-gift input {
+      min-width: 0;
+      height: 32px;
+      border: 1px solid var(--line-strong);
+      border-radius: 5px;
+      padding: 4px 7px;
+      font: inherit;
+    }
+
+    .admin-gift-history {
+      display: grid;
+      gap: 5px;
+      max-height: 150px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfdfb;
+    }
+
+    .admin-gift-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: #496058;
       font-size: 13px;
     }
 
@@ -1447,7 +1582,7 @@
 
       .shell {
         grid-template-columns: 1fr;
-        height: calc(100vh - 60px);
+        height: calc(100vh - 52px);
       }
 
       .main-area {
@@ -1519,6 +1654,7 @@
         <span class="title-seal" aria-hidden="true">同游</span>
         <div class="title-stack">
           <h1>我们的海</h1>
+          <button class="guide-entry" id="guideBtn" type="button" title="玩法说明" aria-label="玩法说明">?</button>
           <span class="title-note">每一笔，都入海</span>
         </div>
       </div>
@@ -1552,8 +1688,10 @@
           <section class="danmaku-panel" aria-label="弹幕">
             <div class="danmaku-list" id="danmakuList" aria-live="polite"></div>
             <button class="new-messages-btn" id="newMessagesBtn" type="button" hidden>新消息</button>
-            <button class="clear-danmaku-btn" id="clearDanmakuBtn" type="button" hidden>清空</button>
-            <button class="danmaku-batch-btn" id="deleteSelectedMessagesBtn" type="button" hidden>删除</button>
+            <div class="danmaku-admin-actions">
+              <button class="clear-danmaku-btn" id="clearDanmakuBtn" type="button" hidden>清空</button>
+              <button class="danmaku-batch-btn" id="deleteSelectedMessagesBtn" type="button" hidden>删除</button>
+            </div>
             <form class="danmaku-form" id="danmakuForm">
               <div class="danmaku-input-wrap">
                 <input class="danmaku-input" id="danmakuInput" maxlength="30" autocomplete="off" placeholder="说点什么吧">
@@ -1618,6 +1756,38 @@
     </div>
   </section>
 
+  <section class="modal-layer" id="guideModal" aria-label="玩法说明" aria-modal="true" role="dialog">
+    <div class="guide-dialog">
+      <div class="modal-head">
+        <h2>玩法说明</h2>
+        <button class="icon-btn" id="closeGuideBtn" type="button" title="关闭">×</button>
+      </div>
+      <div class="guide-content">
+        <section class="guide-section">
+          <h3>画一条属于你的鱼</h3>
+          <p>先登录账号，再点击“添加鱼苗”。完成绘画并提交质检，达到 75% 后，为小鱼取一个不重复的名字，就能放入大家共享的鱼缸。</p>
+          <p>画布支持画笔、橡皮、油漆桶、撤销、图片导入和 100% 至 300% 缩放；导入的 PNG、JPG、WebP 图片同样需要通过质检。草稿箱最多保存 5 幅，每次保存都会新建一份草稿。</p>
+        </section>
+        <section class="guide-section">
+          <h3>成长值与成长阶段</h3>
+          <p>鱼苗：0 至 79 成长值。小鱼：80 至 299 成长值。成鱼：300 成长值及以上，名字旁会出现一枚金色 ★ 徽章。</p>
+          <p class="guide-formula">成长值 = 存在天数 × 4 + 收到爱心 × 1 + 已喂鱼粮 × 2</p>
+          <p>爱心和鱼粮不相当：每颗爱心增加 1 点，喂 1 颗鱼粮增加 2 点。天数按小鱼进入鱼缸满 24 小时计算，每满一天自动增加 4 点。</p>
+        </section>
+        <section class="guide-section">
+          <h3>爱心、鱼粮与商店</h3>
+          <p>点击鱼缸中的小鱼可送上爱心，不能给自己的鱼点赞；同一账号对同一条鱼每天最多送 50 次爱心。</p>
+          <p>商店每天可免费领取 15 颗鱼粮。进入“我的”后，可以给自己的鱼喂食，每次喂食消耗 1 颗鱼粮并增加 2 点成长值。管理员赠送的鱼粮也会直接进入账户。</p>
+        </section>
+        <section class="guide-section">
+          <h3>我的、排行榜与互动</h3>
+          <p>“我的”中可查看并放生自己创建的全部鱼苗，也可编辑账户名，每 7 天可修改一次。排行榜展示爱心数最高的 15 条鱼，悬停名字可查看主人和年龄。</p>
+          <p>弹幕需要登录后发送，单条最多 30 字；所有访客共享最新 100 条消息。八个月前加入的鱼会被系统自动放生。</p>
+        </section>
+      </div>
+    </div>
+  </section>
+
   <section class="modal-layer" id="myFishModal" aria-label="我的" aria-modal="true" role="dialog">
     <div class="my-fish-dialog">
       <div class="modal-head">
@@ -1663,6 +1833,12 @@
           <button class="admin-danger" id="deleteSelectedFishBtn" type="button">批量放生</button>
           <button id="exitAdminModeBtn" type="button">退出管理</button>
         </div>
+        <div class="admin-food-gift">
+          <input id="giftFoodUsername" maxlength="18" autocomplete="off" placeholder="账户名">
+          <input id="giftFoodAmount" type="number" min="1" max="9999" value="15" aria-label="鱼粮数量">
+          <button id="giftFoodBtn" type="button">赠送鱼粮</button>
+        </div>
+        <div class="admin-gift-history" id="adminGiftHistory"></div>
         <p class="my-fish-summary">可放生任意鱼苗</p>
         <div class="my-fish-list" id="adminFishList"></div>
       </div>
@@ -1713,6 +1889,8 @@
               </div>
               <button class="draft-btn" id="saveDraftBtn" type="button">保存草稿</button>
               <button class="draft-btn" id="restoreDraftBtn" type="button">草稿箱</button>
+              <button class="draft-btn" id="importImageBtn" type="button">导入图片</button>
+              <input id="imageImportInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
             </div>
           </div>
           <div class="draw-canvas-wrap" id="drawCanvasWrap">
@@ -1833,6 +2011,9 @@
       fishModal: document.getElementById("fishModal"),
       introModal: document.getElementById("introModal"),
       closeIntroBtn: document.getElementById("closeIntroBtn"),
+      guideModal: document.getElementById("guideModal"),
+      guideBtn: document.getElementById("guideBtn"),
+      closeGuideBtn: document.getElementById("closeGuideBtn"),
       resultLayer: document.getElementById("resultLayer"),
       closeResultBtn: document.getElementById("closeResultBtn"),
       newFishBtn: document.getElementById("newFishBtn"),
@@ -1864,6 +2045,10 @@
       adminLoginBtn: document.getElementById("adminLoginBtn"),
       selectAllAdminFishBtn: document.getElementById("selectAllAdminFishBtn"),
       deleteSelectedFishBtn: document.getElementById("deleteSelectedFishBtn"),
+      giftFoodUsername: document.getElementById("giftFoodUsername"),
+      giftFoodAmount: document.getElementById("giftFoodAmount"),
+      giftFoodBtn: document.getElementById("giftFoodBtn"),
+      adminGiftHistory: document.getElementById("adminGiftHistory"),
       exitAdminModeBtn: document.getElementById("exitAdminModeBtn"),
       clearDanmakuBtn: document.getElementById("clearDanmakuBtn"),
       deleteSelectedMessagesBtn: document.getElementById("deleteSelectedMessagesBtn"),
@@ -1899,6 +2084,8 @@
       strokeSmoothing: document.getElementById("strokeSmoothing"),
       saveDraftBtn: document.getElementById("saveDraftBtn"),
       restoreDraftBtn: document.getElementById("restoreDraftBtn"),
+      importImageBtn: document.getElementById("importImageBtn"),
+      imageImportInput: document.getElementById("imageImportInput"),
       draftModal: document.getElementById("draftModal"),
       closeDraftBtn: document.getElementById("closeDraftBtn"),
       draftList: document.getElementById("draftList"),
@@ -1917,6 +2104,12 @@
     const catCtx = els.catCanvas.getContext("2d");
     const drawCtx = els.drawCanvas.getContext("2d", { willReadFrequently: true });
     const imageCache = new Map();
+    const tankBackgroundImage = Object.assign(new Image(), { src: "assets/tank-background.png" });
+    const neighborhoodHomes = [
+      { image: Object.assign(new Image(), { src: "assets/rock-home.png" }), offset: -104, width: 90, height: 63 },
+      { image: Object.assign(new Image(), { src: "assets/stone-head-home.png" }), offset: 0, width: 54, height: 90 },
+      { image: Object.assign(new Image(), { src: "assets/pineapple-home.png" }), offset: 102, width: 57, height: 102 }
+    ];
     const imageFacingCache = new WeakMap();
 
     let state = SHARED_MODE ? loadSharedStateCache() : loadState();
@@ -1992,6 +2185,11 @@
       window.addEventListener("pointerup", stopDrawing);
       window.addEventListener("pointercancel", stopDrawing);
       els.newFishBtn.addEventListener("click", openFishModal);
+      els.guideBtn.addEventListener("click", () => els.guideModal.classList.add("open"));
+      els.closeGuideBtn.addEventListener("click", () => els.guideModal.classList.remove("open"));
+      els.guideModal.addEventListener("click", (event) => {
+        if (event.target === els.guideModal) els.guideModal.classList.remove("open");
+      });
       els.shopBtn.addEventListener("click", openShopModal);
       els.closeShopBtn.addEventListener("click", () => els.shopModal.classList.remove("open"));
       els.claimFoodBtn.addEventListener("click", claimDailyFood);
@@ -2007,6 +2205,7 @@
       els.adminLoginBtn.addEventListener("click", loginAdmin);
       els.selectAllAdminFishBtn.addEventListener("click", toggleSelectAllAdminFish);
       els.deleteSelectedFishBtn.addEventListener("click", deleteSelectedAdminFish);
+      els.giftFoodBtn.addEventListener("click", giftFoodAsAdmin);
       els.exitAdminModeBtn.addEventListener("click", exitAdminMode);
       els.clearDanmakuBtn.addEventListener("click", clearDanmakuAsAdmin);
       els.deleteSelectedMessagesBtn.addEventListener("click", deleteSelectedDanmaku);
@@ -2039,6 +2238,8 @@
       els.undoBtn.addEventListener("click", undoDrawing);
       els.saveDraftBtn.addEventListener("click", saveDraft);
       els.restoreDraftBtn.addEventListener("click", () => openDraftModal(false));
+      els.importImageBtn.addEventListener("click", () => els.imageImportInput.click());
+      els.imageImportInput.addEventListener("change", importImageToCanvas);
       els.closeDraftBtn.addEventListener("click", closeDraftModal);
       els.draftModal.addEventListener("click", (event) => {
         if (event.target === els.draftModal) closeDraftModal();
@@ -2080,6 +2281,7 @@
         if (event.key !== "Escape") return;
         if (els.exitPrompt.classList.contains("open")) closeExitPrompt();
         else if (els.introModal.classList.contains("open")) els.introModal.classList.remove("open");
+        else if (els.guideModal.classList.contains("open")) els.guideModal.classList.remove("open");
         else if (els.resultLayer.classList.contains("open")) closeResult();
         else if (els.fishModal.classList.contains("open")) requestCloseFishModal();
         else if (els.myFishModal.classList.contains("open")) closeMyFishModal();
@@ -2276,6 +2478,83 @@
       drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
       drawingMatchesSavedDraft = false;
       resetSubmission();
+    }
+
+    function importImageToCanvas(event) {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
+        showToast("请选择 PNG、JPG 或 WebP 图片");
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        showToast("图片请控制在 8MB 以内");
+        return;
+      }
+
+      const image = new Image();
+      const sourceUrl = URL.createObjectURL(file);
+      image.onload = () => {
+        URL.revokeObjectURL(sourceUrl);
+        const scale = Math.min((DRAW_WIDTH * 0.9) / image.naturalWidth, (DRAW_HEIGHT * 0.9) / image.naturalHeight, 1);
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const x = Math.round((DRAW_WIDTH - width) / 2);
+        const y = Math.round((DRAW_HEIGHT - height) / 2);
+        saveUndo();
+        drawCtx.clearRect(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+        drawCtx.drawImage(image, x, y, width, height);
+        removeImportedBackground(x, y, width, height);
+        drawingMatchesSavedDraft = false;
+        resetSubmission();
+        showToast("图片已导入，提交后会按相同标准进行质检");
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(sourceUrl);
+        showToast("图片无法读取，请换一张试试");
+      };
+      image.src = sourceUrl;
+    }
+
+    function removeImportedBackground(x, y, width, height) {
+      const image = drawCtx.getImageData(0, 0, DRAW_WIDTH, DRAW_HEIGHT);
+      const pixels = image.data;
+      const sample = [];
+      [[x, y], [x + width - 1, y], [x, y + height - 1], [x + width - 1, y + height - 1]].forEach(([px, py]) => {
+        const offset = (Math.max(0, Math.min(DRAW_HEIGHT - 1, py)) * DRAW_WIDTH + Math.max(0, Math.min(DRAW_WIDTH - 1, px))) * 4;
+        if (pixels[offset + 3] > 24) sample.push([pixels[offset], pixels[offset + 1], pixels[offset + 2]]);
+      });
+      if (!sample.length) return;
+      const base = sample.reduce((sum, color) => color.map((value, index) => sum[index] + value), [0, 0, 0]).map((value) => value / sample.length);
+      const isBackground = (index) => {
+        const offset = index * 4;
+        if (pixels[offset + 3] < 25) return false;
+        const distance = Math.hypot(pixels[offset] - base[0], pixels[offset + 1] - base[1], pixels[offset + 2] - base[2]);
+        const brightness = pixels[offset] + pixels[offset + 1] + pixels[offset + 2];
+        return distance < 42 || (brightness > 728 && Math.max(pixels[offset], pixels[offset + 1], pixels[offset + 2]) - Math.min(pixels[offset], pixels[offset + 1], pixels[offset + 2]) < 24);
+      };
+      const visited = new Uint8Array(DRAW_WIDTH * DRAW_HEIGHT);
+      const stack = [];
+      for (let px = x; px < x + width; px += 1) {
+        stack.push(y * DRAW_WIDTH + px, (y + height - 1) * DRAW_WIDTH + px);
+      }
+      for (let py = y; py < y + height; py += 1) {
+        stack.push(py * DRAW_WIDTH + x, py * DRAW_WIDTH + x + width - 1);
+      }
+      while (stack.length) {
+        const index = stack.pop();
+        if (visited[index] || !isBackground(index)) continue;
+        visited[index] = 1;
+        pixels[index * 4 + 3] = 0;
+        const px = index % DRAW_WIDTH;
+        const py = Math.floor(index / DRAW_WIDTH);
+        if (px > x) stack.push(index - 1);
+        if (px < x + width - 1) stack.push(index + 1);
+        if (py > y) stack.push(index - DRAW_WIDTH);
+        if (py < y + height - 1) stack.push(index + DRAW_WIDTH);
+      }
+      drawCtx.putImageData(image, 0, 0);
     }
 
     function hasDrawing() {
@@ -3043,7 +3322,7 @@
 
     async function sendDanmaku(event) {
       event.preventDefault();
-      if (!accountSession && !isAdmin) {
+      if (!accountSession) {
         showToast("请先登录后再发送弹幕");
         openAuthModal();
         return;
@@ -3052,7 +3331,7 @@
       if (!content) return;
       const message = {
         id: `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        name: isAdmin ? "管理员-v" : accountSession.username,
+        name: accountSession.username,
         content: content.slice(0, 30),
         sessionId: danmakuSessionId,
         createdAt: Date.now()
@@ -3190,6 +3469,7 @@
         els.adminLoginPanel.hidden = true;
         els.adminPanel.hidden = false;
         renderAdminPanel();
+        loadAdminGiftHistory();
       } catch (error) {
         els.adminError.textContent = error.message || "管理员口令不正确";
       } finally {
@@ -3236,6 +3516,49 @@
         : "全选鱼苗";
     }
 
+    async function giftFoodAsAdmin() {
+      if (!adminPanelVerified) return;
+      const username = els.giftFoodUsername.value.trim();
+      const amount = Number(els.giftFoodAmount.value);
+      if (!username || !Number.isInteger(amount) || amount < 1 || amount > 9999) {
+        showToast("请输入账户名和 1 到 9999 的鱼粮数量");
+        return;
+      }
+      try {
+        await apiRequest("/api/admin/food/grant", { method: "POST", adminPassword, body: { username, amount } });
+        els.giftFoodUsername.value = "";
+        await loadAdminGiftHistory();
+        showToast(`已向 ${username} 赠送 ${amount} 颗鱼粮`);
+      } catch (error) {
+        showToast(error.message || "赠送鱼粮失败");
+      }
+    }
+
+    async function loadAdminGiftHistory() {
+      if (!adminPanelVerified) return;
+      try {
+        const response = await apiRequest("/api/admin/food/gifts", { method: "GET", adminPassword });
+        const records = Array.isArray(response.gifts) ? response.gifts : [];
+        els.adminGiftHistory.replaceChildren();
+        if (!records.length) {
+          els.adminGiftHistory.textContent = "还没有赠送记录";
+          return;
+        }
+        records.forEach((gift) => {
+          const row = document.createElement("div");
+          row.className = "admin-gift-row";
+          const detail = document.createElement("span");
+          detail.textContent = `${gift.username} +${gift.amount} 鱼粮`;
+          const time = document.createElement("span");
+          time.textContent = new Date(gift.createdAt).toLocaleString("zh-CN", { hour12: false });
+          row.append(detail, time);
+          els.adminGiftHistory.appendChild(row);
+        });
+      } catch (error) {
+        els.adminGiftHistory.textContent = error.message || "赠送记录加载失败";
+      }
+    }
+
     async function editQualityThreshold() {
       if (!isAdmin) return;
       const value = window.prompt("请输入 60 到 95 之间的质检门槛", String(passScore));
@@ -3271,13 +3594,15 @@
 
     async function deleteAdminFish(id) {
       if (!adminPanelVerified) return;
+      const fish = state.fish.find((item) => item.id === id);
+      if (!fish) return;
+      state.fish = state.fish.filter((item) => item.id !== id);
+      selectedAdminFishIds.delete(id);
+      renderAll();
       try {
         await apiRequest(`/api/fish/${encodeURIComponent(id)}`, { method: "DELETE", adminPassword });
-        state.fish = state.fish.filter((fish) => fish.id !== id);
-        selectedAdminFishIds.delete(id);
-        renderAll();
-        renderAdminPanel();
       } catch (error) {
+        await syncSharedState();
         showToast(error.message || "放生失败");
       }
     }
@@ -3299,14 +3624,14 @@
         return;
       }
       if (!window.confirm(`确定放生选中的 ${ids.length} 条鱼苗吗？`)) return;
+      const removed = new Set(ids);
+      state.fish = state.fish.filter((fish) => !removed.has(fish.id));
+      selectedAdminFishIds.clear();
+      renderAll();
       try {
         await apiRequest("/api/admin/fish/delete-batch", { method: "POST", adminPassword, body: { ids } });
-        const removed = new Set(ids);
-        state.fish = state.fish.filter((fish) => !removed.has(fish.id));
-        selectedAdminFishIds.clear();
-        renderAll();
-        renderAdminPanel();
       } catch (error) {
+        await syncSharedState();
         showToast(error.message || "批量放生失败");
       }
     }
@@ -3594,9 +3919,9 @@
 
     function getFishStage(fish) {
       const ageDays = Math.max(0, Math.floor((Date.now() - Number(fish.createdAt || Date.now())) / 86400000));
-      const growth = ageDays * 2 + Math.max(0, Number(fish.hearts) || 0) + Math.max(0, Number(fish.food) || 0) * 3;
-      if (growth >= 150) return { key: "adult", label: "成鱼", growth };
-      if (growth >= 50) return { key: "young", label: "小鱼", growth };
+      const growth = ageDays * 4 + Math.max(0, Number(fish.hearts) || 0) + Math.max(0, Number(fish.food) || 0) * 2;
+      if (growth >= 300) return { key: "adult", label: "成鱼", growth };
+      if (growth >= 80) return { key: "young", label: "小鱼", growth };
       return { key: "fry", label: "鱼苗", growth };
     }
 
@@ -3618,7 +3943,6 @@
 
       tankCtx.clearRect(0, 0, width, height);
       drawWater(width, height, t);
-      drawTankPlants(width, height, t);
       drawStoredFish(width, height, t);
       drawForeground(width, height, t);
 
@@ -3647,57 +3971,54 @@
     }
 
     function drawWater(width, height, time, pawTouch = 0) {
-      const waterTop = getWaterTop(height);
-      tankCtx.fillStyle = "#f4faf7";
-      tankCtx.fillRect(0, 0, width, waterTop);
-      const gradient = tankCtx.createLinearGradient(0, waterTop, 0, height);
-      gradient.addColorStop(0, "#d8f3f0");
-      gradient.addColorStop(0.48, "#8fd3da");
-      gradient.addColorStop(1, "#287fa1");
-      tankCtx.fillStyle = gradient;
-      tankCtx.fillRect(0, waterTop, width, height - waterTop);
+      if (tankBackgroundImage.complete && tankBackgroundImage.naturalWidth) {
+        const imageRatio = tankBackgroundImage.naturalWidth / tankBackgroundImage.naturalHeight;
+        const canvasRatio = width / height;
+        let sourceX = 0;
+        let sourceY = 0;
+        let sourceWidth = tankBackgroundImage.naturalWidth;
+        let sourceHeight = tankBackgroundImage.naturalHeight;
+        if (canvasRatio > imageRatio) {
+          sourceHeight = sourceWidth / canvasRatio;
+          sourceY = (tankBackgroundImage.naturalHeight - sourceHeight) / 2;
+        } else {
+          sourceWidth = sourceHeight * canvasRatio;
+          sourceX = (tankBackgroundImage.naturalWidth - sourceWidth) / 2;
+        }
+        tankCtx.drawImage(tankBackgroundImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
+      } else {
+        const gradient = tankCtx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, "#48d6d7");
+        gradient.addColorStop(1, "#087fb4");
+        tankCtx.fillStyle = gradient;
+        tankCtx.fillRect(0, 0, width, height);
+      }
 
       tankCtx.save();
-      tankCtx.globalAlpha = 0.12;
-      tankCtx.fillStyle = "#ffffff";
-      for (let index = 0; index < 5; index += 1) {
-        const origin = width * (0.08 + index * 0.22) + Math.sin(time * 0.18 + index) * 24;
-        tankCtx.beginPath();
-        tankCtx.moveTo(origin, waterTop);
-        tankCtx.lineTo(origin + 42, waterTop);
-        tankCtx.lineTo(origin + 155, height * 0.7);
-        tankCtx.lineTo(origin + 82, height * 0.7);
-        tankCtx.closePath();
-        tankCtx.fill();
-      }
-      tankCtx.restore();
-
-      tankCtx.strokeStyle = "rgba(255,255,255,0.28)";
-      tankCtx.lineWidth = 2;
-      for (let y = waterTop + 30; y < height - 60; y += 44) {
+      tankCtx.strokeStyle = "rgba(235,255,252,0.19)";
+      tankCtx.lineWidth = 1.6;
+      for (let y = 34; y < height * 0.82; y += 58) {
         tankCtx.beginPath();
         for (let x = -30; x <= width + 30; x += 22) {
-          const wave = y + Math.sin(time * 0.8 + x * 0.025 + y * 0.02) * 5;
+          const wave = y + Math.sin(time * 1.15 + x * 0.021 + y * 0.018) * 4 + Math.sin(time * 0.7 + x * 0.012) * 2;
           if (x === -30) tankCtx.moveTo(x, wave);
           else tankCtx.lineTo(x, wave);
         }
         tankCtx.stroke();
       }
-
-      tankCtx.fillStyle = "rgba(255,255,255,0.32)";
-      for (let i = 0; i < 32; i += 1) {
-        const x = ((i * 97 + time * (12 + i % 5)) % (width + 70)) - 35;
-        const waterHeight = Math.max(120, height - waterTop - 70);
-        const y = height - 45 - ((time * (18 + i % 7) + i * 53) % waterHeight);
-        const radius = 2 + (i % 4);
+      tankCtx.globalAlpha = 0.1;
+      tankCtx.fillStyle = "#ffffff";
+      for (let index = 0; index < 4; index += 1) {
+        const origin = ((time * 18 + index * width * 0.27) % (width + 180)) - 90;
         tankCtx.beginPath();
-        tankCtx.arc(x, y, radius, 0, Math.PI * 2);
+        tankCtx.ellipse(origin, height * (0.24 + index * 0.13), 110, 16, -0.25, 0, Math.PI * 2);
         tankCtx.fill();
       }
+      tankCtx.restore();
 
       if (pawTouch > 0.03) {
         const rippleX = width - 142 + Math.sin(time * 0.9) * 6;
-        const rippleY = waterTop + 6;
+        const rippleY = 6;
         tankCtx.save();
         tankCtx.strokeStyle = `rgba(255,255,255,${0.34 * pawTouch})`;
         tankCtx.lineWidth = 1.8;
@@ -4052,6 +4373,21 @@
       }
     }
 
+    function drawNeighborhoodHomes(width, height) {
+      const scale = Math.max(0.48, Math.min(0.9, width / 1420));
+      const baseX = width * 0.52;
+      const baseY = height - 34;
+      tankCtx.save();
+      tankCtx.globalAlpha = 0.9;
+      neighborhoodHomes.forEach((home) => {
+        if (!home.image.complete || !home.image.naturalWidth) return;
+        const drawWidth = home.width * scale;
+        const drawHeight = home.height * scale;
+        tankCtx.drawImage(home.image, baseX + home.offset * scale - drawWidth / 2, baseY - drawHeight, drawWidth, drawHeight);
+      });
+      tankCtx.restore();
+    }
+
     function drawStoredFish(width, height, time) {
       [...state.fish]
         .map((fish, index) => ({ fish, order: index }))
@@ -4160,8 +4496,8 @@
       const labelX = Math.max(8, Math.min(x - labelWidth / 2, els.tankCanvas.getBoundingClientRect().width - labelWidth - 8));
       const labelY = Math.max(10, y - 22);
       roundedRect(tankCtx, labelX, labelY, labelWidth, 24, 6);
-      tankCtx.globalAlpha = 0.72 + depth * 0.28;
-      tankCtx.fillStyle = "rgba(255,255,255,0.82)";
+      tankCtx.globalAlpha = 0.28 + depth * 0.18;
+      tankCtx.fillStyle = "rgba(255,255,255,0.66)";
       tankCtx.fill();
       const availableWidth = labelWidth - 12 - (deletable ? 23 : 0);
       const textScale = Math.min(1, availableWidth / Math.max(1, textWidth));
@@ -4185,6 +4521,7 @@
       let deleteBox = null;
       if (deletable) {
         const deleteX = labelX + labelWidth - 22;
+        tankCtx.globalAlpha = 0.6;
         tankCtx.fillStyle = "#c63d3d";
         tankCtx.font = "400 19px 'Ma Shan Zheng', STXingkai, 华文行楷, KaiTi, 楷体, cursive";
         tankCtx.textAlign = "center";
@@ -4294,7 +4631,7 @@
     async function likeFish(id, burstX, burstY) {
       const fish = state.fish.find((item) => item.id === id);
       if (!fish) return;
-      if (SHARED_MODE && !accountSession) {
+      if (!accountSession) {
         showToast("请先登录后再点赞");
         openAuthModal();
         return;
@@ -4453,26 +4790,11 @@
       return id;
     }
 
-    function getRandomDanmakuName() {
-      const words = [
-        "苹果", "梨", "西瓜", "草莓", "柠檬", "葡萄", "芒果", "橙子", "桃子", "樱桃",
-        "面包", "饼干", "布丁", "奶茶", "冰淇淋", "玉米", "番茄", "蘑菇", "寿司", "蛋糕",
-        "跑步机", "跑道", "自行车", "飞机", "火车", "地铁", "汽车", "电车", "轮船", "热气球",
-        "书包", "铅笔", "橡皮", "尺子", "相机", "闹钟", "茶杯", "雨伞", "风筝", "积木",
-        "台灯", "冰箱", "洗衣机", "吹风机", "电风扇", "望远镜", "吉他", "唱片", "盆栽", "枕头",
-        "老虎", "熊猫", "金渐层", "三花", "橘猫", "小狗", "兔子", "松鼠", "海豚", "鲸鱼",
-        "海豹", "企鹅", "长颈鹿", "小马", "孔雀", "刺猬", "蜗牛", "乌龟", "小羊", "狐狸",
-        "梨花", "桂花", "向日葵", "郁金香", "玫瑰", "薄荷", "银杏", "竹子", "云朵", "彩虹",
-        "月亮", "星星", "雪花", "海浪", "灯塔", "森林", "操场", "花园", "邮局", "车站"
-      ];
-      return words[Math.floor(Math.random() * words.length)];
-    }
-
     function normalizeMessage(message) {
       if (!message || !String(message.content || "").trim()) return null;
       return {
         id: String(message.id || `${Date.now()}-${Math.random()}`),
-        name: String(message.name || "匿名鱼友").trim().slice(0, 32),
+        name: String(message.name || "未命名用户").trim().slice(0, 32),
         content: String(message.content).trim().slice(0, 30),
         sessionId: String(message.sessionId || "").slice(0, 120),
         createdAt: Number(message.createdAt) || Date.now()
